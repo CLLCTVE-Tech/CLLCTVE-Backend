@@ -47,19 +47,12 @@ cd cllctve-alpha
 nodemon index.js
 ```
 
-A postman package with routes and parameters will be provided as well. While the server is running, you can test various endpoints on your local machine.
+A postman package with routes and parameters will be provided. Please contact authors/contriubtors for this package. While the server is running, you can test various endpoints on your local machine.
 
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+Can be deployed via App Engine or Cloud Run on GCP- More details to come soon
 
 ## Built With
 
@@ -69,10 +62,6 @@ Add additional notes about how to deploy this on a live system
 * [MailChimp](https://mailchimp.com/)- Used to generate and maintain mailing lists
 
 
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
 ## Authors
 
 * **Daniel Fatade** 
@@ -81,6 +70,10 @@ See also the list of [contributors](https://github.com/your/project/contributors
 
 ## Acknowledgments
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+Code was used and refactored from some of the following Developers:
+
+* [Mihai Neacsu](https://github.com/mihaineacsu)
+* [Mario Delgado](https://github.com/peachepe)
+* [Olamilekan Odukoya](https://medium.com/@olamilekan001)
+* [Matt Goldspink](https://www.codementor.io/@mattgoldspink)
+* [Jon Corbin](https://blog.logrocket.com/author/joncorbin/)
