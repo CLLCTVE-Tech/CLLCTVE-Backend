@@ -36,9 +36,9 @@ End with an example of getting some data out of the system or using it for a lit
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
+In order to run tests, you will need to start the server and have postman set up.
 
-### Break down into end to end tests
+### Start the server
 
 In order To run the server, simply use the following commands:
 
@@ -49,10 +49,16 @@ nodemon index.js
 
 A postman package with routes and parameters will be provided. Please contact authors/contriubtors for this package. While the server is running, you can test various endpoints on your local machine.
 
+You can download postman here- [Postman](https://www.getpostman.com/downloads/)
+
 
 ## Deployment
 
 Can be deployed via App Engine or Cloud Run on GCP- More details to come soon
+
+* [App Engine](https://cloud.google.com/appengine/)
+* [Cloud Run](https://cloud.google.com/run/)
+
 
 ## Built With
 
