@@ -1,0 +1,19 @@
+{
+    "jwtPrivateKey":"",
+    "brandPrivateKey":"",
+    "mongoString": "",
+    "mailchimpInstance"  :"",
+    "creativeID"      :  "",
+    "brandID"            : "",
+    "mailchimpApiKey"     :"",
+
+    "emailUser": "",
+    "emailPass": "",
+    "analyticsViewId" : "",
+    "gcpProjectId": "",
+    "twilAccountSid" : "",
+    "twilAuthToken" : "",
+    "twilNumber" :""
+
+
+}
