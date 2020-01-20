@@ -39,6 +39,10 @@ A sample config file will be present as well in cllctve-alpha/config/default-sam
 * GCP Analyitcs view ID.
 * jwt Private key for authentication purposes.
 
+Make sure a keyfile.json file has also been downloaded for Storage and Analytics in order to access GCP features.
+
+A sample getstream.js file has been provided as well. Rename to getsream.js and populate script with api keys and so on.
+
 ## Running the tests
 
 In order to run tests, you will need to start the server and have postman set up.
