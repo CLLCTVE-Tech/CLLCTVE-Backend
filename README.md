@@ -1,23 +1,24 @@
 # cllctve-alpha
 Web Functionality for CLLCTVE alpha
+Currently, only backend features are supported
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+To start, clone the repository in order to get a working version on your local machien for testing and development. See deployment for notes on how to deploy the project on a live system.
 
 ### Prerequisites
 
 The following software requirements are needed: 
 
-```
-Node.js 8+
-MongoDB 3.6+
-VSCode
-```
+
+* [Node.js 8+](https://nodejs.org/en/) - The Web Framework Used
+* [MongoDB 3.6+](https://www.mongodb.com/download-center/community) 
+* [VSCode](https://code.visualstudio.com/) - The code editor used
+
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+Node.js as well as VSCode will need to be installed in order to get a working version of the dsoftware on your local machine. There are also a number of packages that will be used to run this application on Node.js. Follow these steps to get everything set up.
 
 Say what the step will be
 
@@ -39,11 +40,14 @@ Explain how to run the automated tests for this system
 
 ### Break down into end to end tests
 
-Explain what these tests test and why
+In order To run the server, simply use the following commands:
 
 ```
-Give an example
+cd cllctve-alpha
+nodemon index.js
 ```
+
+A postman package with routes and parameters will be provided as well. While the server is running, you can test various endpoints on your local machine.
 
 ### And coding style tests
 
@@ -59,13 +63,11 @@ Add additional notes about how to deploy this on a live system
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+* [GetStream](https://getstream.io/) - The feed API used
+* [Google Cloud](https://cloud.google.com/) - Used for storgae, deployment purposes and various other features
+* [Twilio](https://www.twilio.com/) - Used to for various communication purposes across the platform
+* [MailChimp](https://mailchimp.com/)- Used to generate and maintain mailing lists
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -73,13 +75,9 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Daniel Fatade** 
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Acknowledgments
 
