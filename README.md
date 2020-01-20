@@ -8,7 +8,7 @@ To start, clone the repository in order to get a working version on your local m
 
 ### Prerequisites
 
-The following software requirements are needed: 
+The following software requirements are needed. Please download before installing npm packages 
 
 
 * [Node.js 8+](https://nodejs.org/en/) - The Web Framework Used
@@ -18,21 +18,26 @@ The following software requirements are needed:
 
 ### Installing
 
-Node.js as well as VSCode will need to be installed in order to get a working version of the dsoftware on your local machine. There are also a number of packages that will be used to run this application on Node.js. Follow these steps to get everything set up.
+Node.js as well as VSCode will need to be installed in order to get a working version of the software on your local machine. There are also a number of packages that will be used to run this application on Node.js. Follow these steps to get everything set up. 
 
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
+Download all the packages used in the program. Make sure the package.json file from the repo is present on your local machine.
 
 ```
-until finished
+npm init -y #to init nodejs app without wizard
+npm install #crawl through all the required packages mentioned in package.json and download it to node_modules folder
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+### Configuring the Application
+
+A sample config file will be present as well in cllctve-alpha/config/default-sample.json. Rename this json folder to default.json and enter the appropriate API Keys. Pass in information for:
+
+* Twilio Account SSID and Authentication Token.
+* MailChimp API key, instance and list ID's for brands and creatives.
+* Mongo Connection String.
+* Email address and password to enable features that send emails.
+* GCP Project ID.
+* GCP Analyitcs view ID.
+* jwt Private key for authentication purposes.
 
 ## Running the tests
 
