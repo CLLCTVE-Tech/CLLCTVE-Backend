@@ -13,8 +13,9 @@ var express = require('express'),
     };
 
     const {imageUpload}= require('../cloud/config/imageUpload');
-    const {User, validateUser, validateUserName, validateDreamJob, 
-        validateSkill, validateSocialMedia, validateExperience}= require('../models/user');
+    const {User, validateSkill, validateExperience, 
+        validateDreamJob, validateEducation}= require('../models/user');
+    const Joi = require('joi');
     
 
     /******************
@@ -60,95 +61,60 @@ router.put('/edit', auth, async(req,res)=>{
 
     try{
 
+    console.log(req.body)
+
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
     if (!current_user) return res.status(404).send("An error occured. ");
-
-    if(req.body.hasOwnProperty('profilePic')){
-        current_user.profilePic =[await imageUpload(req.file, 'profile', req.user.id)];
-    }
-
-    if(req.body.hasOwnProperty('profilePic')){
-        image_url=uploadProfilePic(current_user, req.body.profilePic);
-        current_user.profilePics.push(image_url);
-        await current_user.save();
-        console.log(image_url);
-        
-    }
-
+    
     if(req.body.hasOwnProperty('firstName')){
-        const {error}= Joi.validate({firstName: Joi.string().min(5).max(50)}, req.body.firstName);
+        let {error}= Joi.validate({firstName: req.body.firstName}, {firstName: Joi.string().min(5).max(50)});
         if (error) return res.status(404).send(error.details[0].message);
-        current_user.firstName = req.body.firstName;
     };
 
     if(req.body.hasOwnProperty('lastName')){
-        const {error}= Joi.validate({lastName: Joi.string().min(5).max(50)}, req.body.lastName);
+        let {error}= Joi.validate({lastName: req.body.lastName}, {lastName: Joi.string().min(5).max(50)});
         if (error) return res.status(404).send(error.details[0].message);
-        
-        current_user.lastName=req.body.lastName;
     };
 
     if(req.body.hasOwnProperty('email')){
-        const {error}= Joi.validate({email: Joi.string().min(8).max(255).email()}, req.body.email);
+        const {error}= Joi.validate({email:req.body.email}, {email: Joi.string().min(8).max(255).email()} );
         if (error) return res.status(404).send(error.details[0].message);
-        
-        current_user.email=req.body.email;
     };
 
     if(req.body.hasOwnProperty('username')){
-        const {error}= Joi.validate({username: Joi.string().min(5).max(50)}, req.body.username);
+        const {error}= Joi.validate({username:req.body.username}, {username: Joi.string().min(5).max(50)});
         if (error) return res.status(404).send(error.details[0].message);
-        
-        current_user.username = req.body.username;
     };
 
-    if(req.body.hasOwnProperty('dreamJob')){
-        const {error}= Joi.validate({dreamJob: Joi.string().min(5).max(50)}, req.body.dreamJob);
+    if(req.body.hasOwnProperty('dreamJobs')){
+        for (var i = 0; i < req.body.dreamJobs.length; i++) {
+        const {error}= validateDreamJob({dreamJob: req.body.dreamJobs[i]});
         if (error) return res.status(404).send(error.details[0].message);
-        
-        current_user.dreamJob= req.body.dreamJob;
+        }
     };
 
     if(req.body.hasOwnProperty('skills')){
-        var skills_split=req.body.skills.split(',');
-        console.log(skills_split);
-
-        for (var i = 0; i < skills_split.length; i++) {
-            //console.log(skills_split[i]);
-
-            const {error}= validateSkill({skill:skills_split[i]});
+        for (var i = 0; i < req.body.skills.length; i++) {
+            const {error}= validateSkill({skill:req.body.skills[i]});
             if (error) return res.status(404).send(error.details[0].message);
-
-            current_user.skills.push(skills_split[i]);
         };
     };
 
-        if(req.body.hasOwnProperty('socialMediaHandles')){
-
-            const {error}= validateSocialMedia(req.body.socialMediaHandles);
-            if (error) return res.status(404).send(error.details[0].message);
-
-            console.log(req.body.socialMediaHandles.twitter);
-                
-            if(req.body.socialMediaHandles.hasOwnProperty('facebook')) current_user.set('socialMediaHandles.facebook', req.body.socialMediaHandles.facebook);
-            if(req.body.socialMediaHandles.hasOwnProperty('twitter')) current_user.set('socialMediaHandles.twitter', req.body.socialMediaHandles.twitter);
-            if(req.body.socialMediaHandles.hasOwnProperty('linkedin')) current_user.set('socialMediaHandles.linkedin', req.body.socialMediaHandles.linkedin);
-            if(req.body.socialMediaHandles.hasOwnProperty('instagram')) current_user.set('socialMediaHandles.instagram', req.body.socialMediaHandles.instagram);
-            if(req.body.socialMediaHandles.hasOwnProperty('github')) current_user.set('socialMediaHandles.github', req.body.socialMediaHandles.github);
-            if(req.body.socialMediaHandles.hasOwnProperty('youtube')) current_user.set('socialMediaHandles.youtube', req.body.socialMediaHandles.youtube);
-            
-    };
-
-
     if(req.body.hasOwnProperty('experience')){
-
-        const {error}=validateExperience(req.body.experience);
+        for (var i = 0; i < req.body.experience.length; i++) {
+        const {error}=validateExperience(req.body.experience[i]);
         if (error) return res.status(404).send(error.details[0].message);
-
-        current_user.experience.push(req.body.experience);
-        
+        }
     };
 
+    if(req.body.hasOwnProperty('education')){
+        for (var i = 0; i < req.body.education.length; i++) {
+        const {error}=validateEducation(req.body.education[i]);
+        if (error) return res.status(404).send(error.details[0].message);
+        }
+    };
+
+    await current_user.update(req.body);
     await current_user.save();
     return res.status(200).send(current_user);
 
@@ -161,38 +127,50 @@ router.put('/edit', auth, async(req,res)=>{
 });
 
 
-//might move to settings route
-router.put('/password', auth, async(req,res)=>{
+router.put('/edit/profile/picture', auth, async(req,res)=>{
 
     try{
 
-    const current_user=await User.findOne({_id:req.user.id}).select("-password");
-    if (!current_user) return res.status(404).send("An error occured. Please Contact us.");
+        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        if (!current_user) return res.status(404).send("An error occured. ");
 
-    //check if user knows current password.
-    const validPassword=await bcrypt.compare(req.body.password, user.password);
-    if (!validPassword) return res.status(404).send('Please provide correct password');
+        image_url= await imageUpload(req.file, 'profile', req.user.id);
+        current_user.profilePic= image_url;
+        await current_user.save();
 
-    //we want the user to enter password twice and make sure it matches
-    if (req.body.password != req.body.passwordAgain) return res.status(404).send("Passwords do not match.");
+        return res.status(200).send(current_user);
+} catch(error){
+
+
+    console.error(error);
+    return res.status(500).send("Sorry an error occured please try again later.");
+
     
-    //validate the password
-    const{error}= Joi.validate({password: Joi.string().min(8).max(2048)}, req.body.password)
-    if (error) return res.status(404).send(error.details[0].message);
 
-    const salt=await bcrypt.genSalt(10);
-    var saltPassword=await bcrypt.hash(req.body.password, salt);
-    await current_user.update({password: saltPassword});
+}
+});
 
-    return res.status(200).send("Your password has successfully been updated.");
+router.put('/edit/background/picture', auth, async(req,res)=>{
 
-    } catch(error){
+    try{
 
-        console.error(error);
-        return res.status(500).send("Sorry an error occured please try again later.");
+        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        if (!current_user) return res.status(404).send("An error occured. ");
 
-    };
+        image_url= await imageUpload(req.file, 'profile', req.user.id);
+        current_user.backgroundPic= image_url;
+        await current_user.save();
 
+        return res.status(200).send(current_user);
+} catch(error){
+
+
+    console.error(error);
+    return res.status(500).send("Sorry an error occured please try again later.");
+
+    
+
+}
 });
 
 module.exports=router;

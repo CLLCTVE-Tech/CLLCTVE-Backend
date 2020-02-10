@@ -5,11 +5,13 @@ var express = require('express'),
 	_ = require('underscore'),
 	async = require('async'),
     stream_node = require('getstream-node'),
-    surveys=require('./surveys');
+    surveys=require('./surveys'),
+    config= require('config');
 	
     
 var router = express.Router();
 const {Insight}=require('../models/insight');
+const request= require('superagent');
 var getData= require('../cloud/config/analytics');
 
 var FeedManager = stream_node.FeedManager; 
@@ -23,19 +25,6 @@ router.get('/', [auth], async function(req, res) {
 
     try{
     
-    //check if this is a brand
-    var user = await User.findOne({_id:req.user.id});
-
-    if (!user)
-    return res.status(400).send("User Does not Exist")
-
-    const insights = await Insight
-    .find({user: req.user.id})
-    .sort({'date': -1})
-    .limit(5);
-
-    
-
     /*const { metrics, startDate, endDate } = req.query;
 
     console.log(`Requested metrics: ${metrics}`);
@@ -55,8 +44,7 @@ router.get('/', [auth], async function(req, res) {
           body[key] = value[key];
         });
       });
-      //add insights to body
-      body['insights']=insights;
+      
       //send data
       res.status(200).send({ data: body });
       console.log('Done');
@@ -67,27 +55,6 @@ router.get('/', [auth], async function(req, res) {
       console.log('Done');
       return res.status(404).send({message: `${err}` });
     });
-}
-
-catch(error){
-
-    console.error(error);
-    return res.status(500).send("Sorry an error occured please try again later.");
-
-}
-
-});
-
-router.post('/test', auth, async function(req, res) {
-    try{
-
-    
-    var insightData = { user: req.user.id, text: 'This is a test for insights honestly'} ;
-    var newInsight = await new Insight(insightData);
-   
-   await newInsight.save()
-   return res.status(200).send(newInsight);
-    
 }
 
 catch(error){
@@ -141,20 +108,25 @@ router.get('/insights', [auth], async function(req, res) {
 
     try{
 
-      console.log(req.user.id);
-    //check if this is a brand
-    var user = await User.findOne({_id:req.user.id});
-    console.log(user)
+      //if we have no queries, return first 10 results from page 1 by default.
+      if (Object.keys(req.query)==0){
+        const data = await request.get('https://www.considdr.com/api/v1/projects/266')
+        .set('X-API-ACCESS-KEY', config.get('considAccess'))
+        .set('X-API-SECRET-KEY', config.get('considSecret'));
 
-    if (!user)
-    return res.status(400).send("User Does not Exist")
+    return res.status(200).send(data.body.insights);
+      }
 
-    const insights = await Insight
-    .find({user: req.user.id})
-    .sort({'date': -1})
-    .limit(20);
+      else{
 
-    return res.status(200).send(insights);
+        const data = await request.get('https://www.considdr.com/api/v1/projects/266?current_page='+req.query.page +
+        '&per_page='+ req.query.limit)
+        .set('X-API-ACCESS-KEY', config.get('considAccess'))
+        .set('X-API-SECRET-KEY', config.get('considSecret'));
+
+    return res.status(200).send(data.body.insights);
+
+      }
 
     }
 
@@ -168,5 +140,5 @@ router.get('/insights', [auth], async function(req, res) {
   });
 
 
-module.exports=router
+module.exports=router;
     

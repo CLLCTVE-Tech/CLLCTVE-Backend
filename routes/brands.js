@@ -23,7 +23,8 @@ router.post('/signup', async (req,res) =>{
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        password: req.body.password
+        password: req.body.password, 
+        phone: req.body.phone
     }
     var {error}= validateUser(userData);
     if (error) return res.status(404).send(error.details[0].message);
@@ -50,7 +51,8 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password,
-        username: req.body.username
+        username: req.body.username,
+        phone: req.body.phone
     });
 
     //hash and set user password

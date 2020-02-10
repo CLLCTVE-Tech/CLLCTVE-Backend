@@ -152,8 +152,12 @@ router.get('/confirmation/:token', async (req,res)=>{
 
 
       //now lets compare passwords, hash them and save them to the database.
-
         if (req.body.password !=req.body.passwordAgain) return res.status(404).send('Passwords do not match');
+
+      //check if password is complex enough
+      var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+     if(!regularExpression.test(req.body.password)) 
+     return res.status(404).send("password should contain atleast one number and one special character");
 
         const decryptedPassword =await bcrypt.compare(req.body.password, user.password);
 

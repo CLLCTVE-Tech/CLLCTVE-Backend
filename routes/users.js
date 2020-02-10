@@ -1,5 +1,5 @@
 const {User, validateUser, validateUserName, validateDreamJob, 
-    validateSkill, validateSocialMedia, validateExperience}= require('../models/user');
+    validateSkill, validateEducation}= require('../models/user');
 const mongoose =require('mongoose');
 const express= require('express');
 const lodash=require('lodash');
@@ -30,23 +30,57 @@ router.post('/signup', async (req,res) =>{
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        password: req.body.password
+        password: req.body.password,
+        phone: req.body.phone
     }
-    const {error}= validateUser(userData);
+    let {error}= validateUser(userData);
     if (error) return res.status(404).send(error.details[0].message);
+
+    //check if email is an edu email for now.
+    if (!req.body.email.endsWith(".edu"))
+    return res.status(404).send("Email must be an edu email"); 
+
+    //check if password is complex enough:
+    var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+    if(!regularExpression.test(req.body.password)) 
+    return res.status(404).send("password should contain atleast one number and one special character");
+
+    let {invalid} = validateUserName({username:req.body.username});
+    if (invalid) return res.status(404).send(invalid.details[0].message);
+
+    //Validate Skills from front end
+    for (var i = 0; i < req.body.skills.length; i++) {
+      let {error}= validateSkill({skill:req.body.skills[i]});
+      if (error) return res.status(404).send(error.details[0].message);
+    }
+
+    //validate education array
+    for (var i = 0; i < req.body.education.length; i++) {
+      let {error}= validateEducation(req.body.education[i]);
+      if (error) return res.status(404).send(error.details[0].message);
+    }
+
+    //validate Dream Jobs
+    for (var i = 0; i < req.body.dreamJobs.length; i++) {
+      let {error}= validateDreamJob({dreamJob:req.body.dreamJobs[i]});
+      if (error) return res.status(404).send(error.details[0].message);
+    }
 
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
     let user = await User.findOne({email:req.body.email});
     if (user) return res.status(404).send('User is already in database.');
-
     
     //create new user object if validation tests have been passed
     user=new User({
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        password: req.body.password
+        phone: req.body.phone,
+        skills: req.body.skills,
+        dreamJobs: req.body.dreamJobs,
+        password: req.body.password,
+        education: req.body.education
     });
 
 
@@ -92,7 +126,6 @@ router.post('/signup', async (req,res) =>{
       }
     });
 
-
            
     //we can use lodash to easily return fields we want to work with
     result=lodash.pick(user, ['firstName','email']);
@@ -107,73 +140,6 @@ router.post('/signup', async (req,res) =>{
     };
 
 });
-
-
-router.post('/signup/next', auth, async (req,res) =>{
-
-    
-    try {
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        console.log(current_user);
-        
-        const {error}= validateUserName({username:req.body.username});
-
-        if (error){
-            console.log(error);
-            console.log(req.body);
-            return res.status(500).send(error.details[0].message);
-        } 
-
-        current_user.username=req.body.username;
-
-        await current_user.save();
-        result=lodash.pick(current_user, ['username']);
-        return res.status(200).send(result);
-      } catch (error) {
-
-        console.error(error);
-        return res.status(500).send("Sorry an error occured please try again later.");
-
-      };
-
-});
-
-router.post('/signup/next/next', auth, async (req,res) =>{
-
-    try{
-
-    const current_user=await User.findOne({_id:req.user.id}).select("-password");
-    const {error}= validateDreamJob({dreamJob:req.body.dreamJob});
-
-    if (error) return res.status(404).send(error.details[0].message);
-    current_user.dreamJob=req.body.dreamJob;
-    console.log(current_user.dreamJob);
-
-    var skills_split=req.body.skills.split(',');
-    console.log(skills_split);
-
-    for (var i = 0; i < skills_split.length; i++) {
-        //console.log(skills_split[i]);
-
-        const {error}= validateSkill({skill:skills_split[i]});
-        if (error) return res.status(404).send(error.details[0].message);
-
-        current_user.skills.push(skills_split[i]);
-      };
-
-    await current_user.save();
-
-    result=lodash.pick(current_user, ['skills', 'dreamJob']);
-    return res.status(200).send(result);
-
-    } catch(error){
-
-        console.error(error);
-        return res.status(500).send("Sorry an error occured please try again later.");
-
-    };
-});
-
 
 //export router
 module.exports =router;
