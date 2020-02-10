@@ -39,7 +39,7 @@ A sample config file will be present as well in cllctve-alpha/config/default-sam
 * GCP Analyitcs view ID.
 * jwt Private key for authentication purposes.
 
-Make sure a keyfile.json file has also been downloaded for Storage and Analytics in order to access GCP features.
+Make sure a keyfile.json file has also been downloaded for Storage and Analytics in order to access GCP features. These files will be called storageKeys.json and analyticsKeys.json. They can be downloaded for each user on GCP. Simply maneuver to the resource and generate and download a credentials file.
 
 A sample getstream.js file has been provided as well. Rename to getsream.js and populate script with api keys and so on.
 
