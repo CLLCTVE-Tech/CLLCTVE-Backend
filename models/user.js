@@ -2,6 +2,7 @@ const Mongoose = require('mongoose');
 const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
+//const phoneJoi = Joi.extend(require('joi-phone-number'));
 
 
 
@@ -11,30 +12,37 @@ const userSchema=new Mongoose.Schema({
 
     username:{
         type: String,
-        minlength: 5,
+        minlength: 3,
         maxlength: 50
     },
 
     firstName:{
         type: String,
         required: true,
-        minlength: 5,
+        minlength: 3,
         maxlength: 50
     },
 
     lastName:{
         type: String,
         required: true,
-        minlength: 5,
+        minlength: 3,
         maxlength: 50
     },
 
     email:{
         type: String,
         required: true,
-        minlength: 10,
+        minlength: 8,
         maxlength: 255,
         unique: true //prevents same email from being stored
+    },
+
+    phone:{
+        type: String,
+        required: false, 
+        minlength: 10,
+        maxlength: 50
     },
 
     //This is how we diffrentiate creatives from brands
@@ -46,6 +54,7 @@ const userSchema=new Mongoose.Schema({
 
 
     profilePic: {type:Array, default: []},
+    backgroundPic: {type:Array, default: []},
 
     password: {
         type: String,
@@ -54,12 +63,7 @@ const userSchema=new Mongoose.Schema({
         maxlength: 1024
     },
 
-    dreamJob: {
-        type: String,
-        required: false,
-        minlength: 8,
-        maxlength: 50
-    },
+    dreamJobs: {type:Array, default: []},
 
     about:{
         type: String,
@@ -79,23 +83,9 @@ const userSchema=new Mongoose.Schema({
     isVerified: {type:Boolean, default: false},
     skills: {type:Array, default: []},
     isActive: {type: Boolean, default: false},
+    experience:{type:Array, default: []},
 
-    experience:[{
-        title: String,
-        company: String,
-        from: String,
-        to: String,
-        description: String,
-        currentlyWorking: Boolean
-    }],
-
-    education:[{
-        school: String,
-        major: String,
-        from: String,
-        to: String,
-        currentlyAttedning: Boolean
-    }],
+    education: {type:Array, default: []},
 
     //this will determine membership
     membership:{type: String, required: true, default: 'normal'},
@@ -104,7 +94,6 @@ const userSchema=new Mongoose.Schema({
         type: Map,
         of: String
       }
-
 });
 
 //We have generated webtokens for each user in different files (auth and users), however,
@@ -120,8 +109,8 @@ const UserModel=Mongoose.model("User", userSchema);
 
 function validateUser(user){
     schema={
-        firstName: Joi.string().min(5).max(50).required(),
-        lastName: Joi.string().min(5).max(50).required(),
+        firstName: Joi.string().min(3).max(50).required(),
+        lastName: Joi.string().min(3).max(50).required(),
         email: Joi.string().min(8).max(255).required().email(),
         password: Joi.string().min(8).max(255).required()
     };
@@ -174,8 +163,7 @@ function validateExperience(userExperience){
         company: Joi.string().min(5).max(60).required(),
         from: Joi.string().required(),
         to: Joi.string().required(),
-        description: Joi.string().min(15).max(200).required(),
-        currentlyWorking: Joi.boolean()
+        description: Joi.string().min(15).max(200).required()
     };
 
     if (userExperience.currentlyWorking==true) schema.to=Joi.date().string();
@@ -183,9 +171,18 @@ function validateExperience(userExperience){
     return Joi.validate(userExperience, schema);
 }
 
+function validateEducation(education){
 
+    console.log(education)
+    schema={
+        school: Joi.string().min(5).max(60).required(),
+        gradYear: Joi.string().min(4).max(5).required(),
+        gradMonth: Joi.string().min(3).max(15).required(),
+        major: Joi.string().min(5).max(60)
+    }
 
-
+    return Joi.validate(education, schema);
+}
 
 
 exports.validateUser= validateUser;
@@ -194,5 +191,6 @@ exports.validateDreamJob=validateDreamJob;
 exports.validateSkill=validateSkill;
 exports.validateExperience=validateExperience;
 exports.validateSocialMedia=validateSocialMedia;
+exports.validateEducation=validateEducation;
 //exports.validateUser= validateUser;
 exports.User= UserModel;
