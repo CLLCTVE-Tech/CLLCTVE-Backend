@@ -17,6 +17,10 @@ const dashboard=require('./routes/dashboard');
 const jobs=require('./routes/jobs');
 const login=require('./routes/login');
 const verify= require('./routes/verify');
+const applications=require('./routes/applications');
+const admin=require('./routes/admin');
+
+
 const cron = require('node-cron');
 const bodyParser=require('body-parser');
 const multer=require('multer');
@@ -95,6 +99,8 @@ app.use('/api/brands', brands);
 app.use('/api/blogs', blogs);
 app.use('/api/login',login);
 app.use('/api/verify', verify);
+app.use('/api/applications', applications);
+app.use('/api/admin', admin);
 
 const port = process.env.PORT || 3000;
 

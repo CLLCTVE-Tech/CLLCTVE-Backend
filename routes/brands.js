@@ -24,7 +24,6 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password, 
-        phone: req.body.phone
     }
     var {error}= validateUser(userData);
     if (error) return res.status(404).send(error.details[0].message);
@@ -51,8 +50,7 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password,
-        username: req.body.username,
-        phone: req.body.phone
+        username: req.body.brandName
     });
 
     //hash and set user password
@@ -86,9 +84,11 @@ router.post('/signup', async (req,res) =>{
       from: config.get("emailUser"),
       to: req.body.email,
       subject: 'CLLCTVE Signup',
-      text: 'This is an automated email to test CLLCTVE  features. Hey ' + req.body.firstName + ' thank you for signing up on our platform.' +
-      'Please verify your account by clicking the link: \nhttp:\/\/' + req.headers.host + '\/api/verify/confirmation\/' + token.token + '.\n'
-    };
+      text: 'This is an automated email to test CLLCTVE  features. Hey ' + req.body.firstName + ' thank you for signing up on our platform!' +
+      'Your application was approved by the CLLCTVE team'+
+      ' Please verify your account by clicking the link: \nhttp:\/\/' + req.headers.host + '\/api/verify/confirmation\/' + token.token + '.\n\n'+
+      "Your temporary password is "+ req.body.password + ", please log into your account and update your password."
+    }; 
 
     console.log('http:\/\/' + req.headers.host + '\/api/verify/confirmation\/' + token.token);
 
@@ -102,8 +102,6 @@ router.post('/signup', async (req,res) =>{
         //res.status(200).send('Email sent: ' + info.response)
       }
     });
-
-
            
     //we can use lodash to easily return fields we want to work with
     result=lodash.pick(user, ['firstName','email']);
