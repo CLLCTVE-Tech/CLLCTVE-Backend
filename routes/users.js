@@ -30,8 +30,7 @@ router.post('/signup', async (req,res) =>{
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        password: req.body.password,
-        phone: req.body.phone
+        password: req.body.password
     }
     let {error}= validateUser(userData);
     if (error) return res.status(404).send(error.details[0].message);
@@ -48,6 +47,7 @@ router.post('/signup', async (req,res) =>{
     let {invalid} = validateUserName({username:req.body.username});
     if (invalid) return res.status(404).send(invalid.details[0].message);
 
+    /*
     //Validate Skills from front end
     for (var i = 0; i < req.body.skills.length; i++) {
       let {error}= validateSkill({skill:req.body.skills[i]});
@@ -65,7 +65,7 @@ router.post('/signup', async (req,res) =>{
       let {error}= validateDreamJob({dreamJob:req.body.dreamJobs[i]});
       if (error) return res.status(404).send(error.details[0].message);
     }
-
+*/
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
     let user = await User.findOne({email:req.body.email});
@@ -76,13 +76,9 @@ router.post('/signup', async (req,res) =>{
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        phone: req.body.phone,
-        skills: req.body.skills,
-        dreamJobs: req.body.dreamJobs,
         password: req.body.password,
         education: req.body.education
     });
-
 
     const salt=await bcrypt.genSalt(10);
     user.password= await bcrypt.hash(req.body.password, salt);
