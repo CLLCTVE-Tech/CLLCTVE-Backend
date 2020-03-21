@@ -6,6 +6,8 @@
     "creativeID"      :  "",
     "brandID"            : "",
     "mailchimpApiKey"     :"",
+    "considAccess": "",
+    "considSecret": "",
 
     "emailUser": "",
     "emailPass": "",

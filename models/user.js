@@ -2,6 +2,7 @@ const Mongoose = require('mongoose');
 const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
+const Schema= Mongoose.Schema;
 //const phoneJoi = Joi.extend(require('joi-phone-number'));
 
 
@@ -48,6 +49,9 @@ const userSchema=new Mongoose.Schema({
     //This is how we diffrentiate creatives from brands
     isBrand: {type: Boolean, required: true, default: false},
 
+    city: {type: String, defualt: "None"},
+    state:{type: String, defualt: "None"},
+
     following: {type: Number, default:0,},
     followers: {type: Number, default:0},
     tweetCount: {type: Number, default:0},
@@ -55,6 +59,8 @@ const userSchema=new Mongoose.Schema({
 
     profilePic: {type:Array, default: []},
     backgroundPic: {type:Array, default: []},
+    resume: {type:Array, default: []},
+    portfolio: {type:Array, default: []},
 
     password: {
         type: String,
@@ -72,19 +78,18 @@ const userSchema=new Mongoose.Schema({
         maxlength: 500
     },
 
-    portfolio: {type:Array, default: []},
-
-    achievements:{type:Array, default: []},
+    honorsAwards:{type:Array, default: []},
+    certifications:{type:Array, default: []},
 
     //we can use this for role based authorization
     isAdmin: {type:Boolean, default: false},
     isContributor: {type:Boolean, default: false},
-    blogPosts: {type:Array, default: []},
+    
     isVerified: {type:Boolean, default: false},
     skills: {type:Array, default: []},
     isActive: {type: Boolean, default: false},
-    experience:{type:Array, default: []},
 
+    experience:{type:Array, default: []},
     education: {type:Array, default: []},
 
     //this will determine membership
@@ -93,7 +98,10 @@ const userSchema=new Mongoose.Schema({
     socialMediaHandles: {
         type: Map,
         of: String
-      }
+      },
+
+    joined: {type: Date, required: true, defualt: Date.now},
+    onboarded: {type: Boolean, required: true, default: false}
 });
 
 //We have generated webtokens for each user in different files (auth and users), however,
@@ -111,6 +119,8 @@ function validateUser(user){
     schema={
         firstName: Joi.string().min(3).max(50).required(),
         lastName: Joi.string().min(3).max(50).required(),
+        username: Joi.string().min(5).max(50).required(),
+        phone: Joi.string().min(10).max(15),
         email: Joi.string().min(8).max(255).required().email(),
         password: Joi.string().min(8).max(255).required()
     };
@@ -118,12 +128,7 @@ function validateUser(user){
     return Joi.validate(user, schema);
 };
 
-function validateUserName(userName){
-    schema={
-        username: Joi.string().min(5).max(50).required()
-    };
-    return Joi.validate(userName, schema);
-};
+
 
 function validateDreamJob(job){
     
@@ -159,10 +164,13 @@ function validateSocialMedia(socialMedia){
 function validateExperience(userExperience){
 
     schema={
-        title: Joi.string().min(5).max(60).required(),
+        position: Joi.string().min(5).max(60).required(),
         company: Joi.string().min(5).max(60).required(),
-        from: Joi.string().required(),
-        to: Joi.string().required(),
+        city: Joi.string().min(5).max(25).required(),
+        state: Joi.string().min(5).max(20).required(),
+        from: Joi.string().min(3).required(),
+        to: Joi.string().min(3).required(),
+        links: Joi.string().min(5).max(120),
         description: Joi.string().min(15).max(200).required()
     };
 
@@ -171,26 +179,129 @@ function validateExperience(userExperience){
     return Joi.validate(userExperience, schema);
 }
 
+
 function validateEducation(education){
 
-    console.log(education)
     schema={
         school: Joi.string().min(5).max(60).required(),
+        degree: Joi.string().min(5).max(60).required(),
+        major: Joi.string().min(5).max(60).required(),
         gradYear: Joi.string().min(4).max(5).required(),
-        gradMonth: Joi.string().min(3).max(15).required(),
-        major: Joi.string().min(5).max(60)
+        gradMonth: Joi.string().min(3).max(15).required() 
     }
 
     return Joi.validate(education, schema);
 }
 
+function validateCertification(certification){
+
+    schema={
+        title: Joi.string().min(5).max(60).required(),
+        organization: Joi.string().min(5).max(60).required(),
+        issuedMonth: Joi.string().min(3).max(15).required(),
+        issuedYear: Joi.string().min(3).max(15).required(),
+        expMonth: Joi.string().min(3).max(15).required() ,
+        expYear:Joi.string().min(3).max(15).required(),
+        certificationID: Joi.string().min(5).max(50).required(),
+        links:Joi.string().min(15).max(150),
+        description: Joi.string().min(20).max(150)
+    }
+
+    return Joi.validate(certification, schema);
+}
+
+function validateHonorsAwards(award){
+
+    schema={
+        title: Joi.string().min(5).max(60).required(),
+        association: Joi.string().min(5).max(100).required(),
+        issuer: Joi.string().min(5).max(60).required(),
+        month: Joi.string().min(3).max(15).required(),
+        year: Joi.string().min(3).max(15).required(),
+        links: Joi.string().min(15).max(150),
+        description: Joi.string().min(20).max(150)
+     
+    }
+
+    return Joi.validate(award, schema);
+}
+
+
+const educationSchema=new Mongoose.Schema({
+
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    school: {type: String, required: true},
+        degree: {type: String, required: true},
+        major: {type: String, required: true},
+        gradYear: {type: String, required: true},
+        gradMonth: {type: String, required: true},
+        date: {type: Date, required: true, defualt: Date.now} 
+
+});
+
+const experienceSchema=new Mongoose.Schema({
+
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    position: {type: String, required: true},
+        company: {type: String, required: true},
+        city: {type: String, required: true},
+        state: {type: String, required: true},
+        from: {type: String, required: true},
+        to: {type: String, required: true},
+        links: {type: String, required: true},
+        description: {type: String, required: true},
+        date: {type: Date, required: true, defualt: Date.now} 
+
+
+});
+
+const certificationSchema=new Mongoose.Schema({
+
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    title: {type: String, required: true},
+        organization: {type: String, required: true},
+        issuedMonth: {type: String, required: true},
+        issuedYear: {type: String, required: true},
+        expMonth: {type: String, required: true} ,
+        expYear:{type: String, required: true},
+        certificationID: {type: String, required: true},
+        links: {type: String, required: true},
+        description: {type: String, required: true},
+        date: {type: Date, required: true, defualt: Date.now} 
+
+});
+
+const honorsAwardSchema=new Mongoose.Schema({
+
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    title: {type: String, required: true},
+        association: {type: String, required: true},
+        issuer: {type: String, required: true},
+        month: {type: String, required: true},
+        year: {type: String, required: true},
+        links: {type: String, required: true},
+        description: {type: String, required: true},
+        date: {type: Date, required: true, defualt: Date.now} 
+
+});
+
+const Education=Mongoose.model("Education", educationSchema);
+const Experience=Mongoose.model("Experience", experienceSchema);
+const Certification=Mongoose.model("Certification", certificationSchema);
+const HonorAward=Mongoose.model("Honor Awards", honorsAwardSchema);
+
 
 exports.validateUser= validateUser;
-exports.validateUserName= validateUserName;
 exports.validateDreamJob=validateDreamJob;
 exports.validateSkill=validateSkill;
 exports.validateExperience=validateExperience;
 exports.validateSocialMedia=validateSocialMedia;
 exports.validateEducation=validateEducation;
-//exports.validateUser= validateUser;
+exports.validateCertification=validateCertification;
+exports.validateHonorsAwards=validateHonorsAwards;
+
 exports.User= UserModel;
+exports.Education=Education;
+exports.Experience= Experience;
+exports.Certification= Certification;
+exports.HonorAward= HonorAward;

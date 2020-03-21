@@ -19,11 +19,18 @@ const login=require('./routes/login');
 const verify= require('./routes/verify');
 const applications=require('./routes/applications');
 const admin=require('./routes/admin');
+const insights= require('./routes/insights');
+const status= require('./config/status');
 
 
 const cron = require('node-cron');
 const bodyParser=require('body-parser');
 const multer=require('multer');
+
+//Will be used for logging into mongoDB
+const winston = require('winston');
+require('winston-mongodb');
+const logger=require('./config/logger');
 
 const multerMid = multer({
   storage: multer.memoryStorage(),
@@ -54,6 +61,7 @@ io.on('connection', function(socket){
 //let app store files using multer
 app.use(multerMid.single('file'))
 
+
 //let app parse json objects
 app.use(express.json());
 
@@ -82,7 +90,6 @@ mongoose.connect(connection_string, { useNewUrlParser: true })
 .then(()=> console.log("Successfully Connected to Database..."))
 .catch(err=> console.log("Failed to connect to databse..."));
 
-
 //enable this so we can parse for json objects in the body of the request
 //app.use(express.json());
 //given the current route, express app will use user that was router exported
@@ -101,6 +108,8 @@ app.use('/api/login',login);
 app.use('/api/verify', verify);
 app.use('/api/applications', applications);
 app.use('/api/admin', admin);
+app.use('/api/insights', insights);
+app.use('/api/status', status);
 
 const port = process.env.PORT || 3000;
 
@@ -111,10 +120,9 @@ app.get('/', (req,res)=>{
   res.sendFile(__dirname + '/routes/message.html');
 });
   
+app.listen(port, function(){
 
-
-
-app.listen(3000, function(){
   console.log(`Listening on port ${port}....`);
-})
+  logger.log("info",`Listening on port ${port}....`);
+});
 //app.listen(port, ()=>{console.log(`Listening on port ${port}....`)});

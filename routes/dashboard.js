@@ -18,6 +18,9 @@ var FeedManager = stream_node.FeedManager;
 var StreamMongoose = stream_node.mongoose;
 var StreamBackend = new StreamMongoose.Backend();
 
+const {InsightFeed}= require('../models/insight');
+const logger= require('../config/logger');
+
 
 router.get('/', [auth], async function(req, res) {
 
@@ -53,13 +56,14 @@ router.get('/', [auth], async function(req, res) {
       console.log('Error:');
       console.log(err);
       console.log('Done');
-      return res.status(404).send({message: `${err}` });
+      return res.status(500).send({message: `${err}` });
     });
 }
 
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -97,7 +101,7 @@ router.get('/graph', [auth], async function(req, res) {
     .catch((err) => {
       console.log('Error:');
       console.log(err);
-      res.status(404).send({ status: 'Error', message: `${err}` });
+      res.status(500).send({ status: 'Error', message: `${err}` });
       console.log('Done');
     });
 
@@ -108,23 +112,34 @@ router.get('/insights', [auth], async function(req, res) {
 
     try{
 
+      const feedID= InsightFeed.findOne({user: req.user.id})
+
+      //defualt feedID is 266
+      if(!feedID) return res.status(404).send("Error, you do not have a feed setup");
+
       //if we have no queries, return first 10 results from page 1 by default.
       if (Object.keys(req.query)==0){
-        const data = await request.get('https://www.considdr.com/api/v1/projects/266')
+        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}`)
         .set('X-API-ACCESS-KEY', config.get('considAccess'))
         .set('X-API-SECRET-KEY', config.get('considSecret'));
 
-    return res.status(200).send(data.body.insights);
+    return res.status(200).send({
+      message: 'Successfully processed insights',
+      insights:data.body.insights
+    });
       }
 
       else{
 
-        const data = await request.get('https://www.considdr.com/api/v1/projects/266?current_page='+req.query.page +
-        '&per_page='+ req.query.limit)
+        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}?current_page='+req.query.page +
+        '&per_page=`+ req.query.limit)
         .set('X-API-ACCESS-KEY', config.get('considAccess'))
         .set('X-API-SECRET-KEY', config.get('considSecret'));
 
-    return res.status(200).send(data.body.insights);
+    return res.status(200).send({
+      message: 'Successfully processed insights',
+      insights:data.body.insights
+    });
 
       }
 
@@ -133,6 +148,7 @@ router.get('/insights', [auth], async function(req, res) {
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
     
     }

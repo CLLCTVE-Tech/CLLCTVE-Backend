@@ -7,6 +7,8 @@ var express = require('express'),
     io = require('socket.io')(http),
     Message= models.Message;
 
+const logger= require('../config/logger');
+
     /******************
       Sending Messages
     ******************/
@@ -27,6 +29,7 @@ var express = require('express'),
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -49,6 +52,7 @@ var express = require('express'),
         catch(error){
     
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -80,6 +84,7 @@ var express = require('express'),
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }

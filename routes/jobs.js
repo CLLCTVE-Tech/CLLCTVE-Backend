@@ -4,6 +4,7 @@ var express = require('express'),
     
 var router = express.Router();
 const {Job}=require('../models/job');
+const logger=require('../config/logger');
 
 
 
@@ -23,6 +24,7 @@ router.get('/', [auth], async function(req, res) {
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -47,6 +49,7 @@ router.get('/:id', [auth], async function(req, res) {
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -77,6 +80,7 @@ router.post('/post', auth, async function(req, res) {
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }

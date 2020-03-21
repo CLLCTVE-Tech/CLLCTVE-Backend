@@ -3,7 +3,6 @@ const {User, validateUser, validateUserName, validateDreamJob,
 const mongoose =require('mongoose');
 const express= require('express');
 const router=express.Router();
-const bcrypt =require('bcrypt');
 const auth=require("../middleware/auth");
 const admin = require('../middleware/admin');
 const Joi=require('joi');
@@ -15,6 +14,7 @@ const config = require('config');
 const request= require('superagent');
 const {brandApp, validateBrand}= require('../models/application');
 const permissions=require('../config/persmissions.json');
+const logger= require('../config/logger');
 
 const transporter = nodemailer.createTransport(smtpTransport({
     service: 'gmail',
@@ -79,14 +79,55 @@ router.post('/brand/signup', async (req, res)=>{
               });
         }
 
-        return res.status(200).send("Application was submitted");
+        return res.status(200).send({
+          message:"Application was submitted",
+          brandApplication: application
+        });
 
         }
     catch(error){
             
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
         };
+
+
+});
+
+
+
+router.post('/brand/discovery/form', async (req, res)=>{
+
+  try{
+
+    //write code to enable brand to submit discovery form request
+
+  }
+  catch(error){
+          
+          console.error(error);
+          logger.error({message:"An error occurred ", error:error})
+          return res.status(500).send("Sorry an error occured please try again later.");
+      };
+
+
+});
+
+//route to enable contributors to submit stories
+router.post('/contributor/story/form', async (req, res)=>{
+
+  try{
+
+    //write code to enable contributor to submit story request
+
+  }
+  catch(error){
+          
+          console.error(error);
+          logger.error({message:"An error occurred ", error:error})
+          return res.status(500).send("Sorry an error occured please try again later.");
+      };
 
 
 });

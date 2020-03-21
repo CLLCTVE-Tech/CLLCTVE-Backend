@@ -8,6 +8,7 @@ var express = require('express'),
 //Twilio Account credentials
 const accountSid = config.get("twilAccountSid");
 const authToken = config.get("twilAuthToken");
+const logger=require('../config/logger');
 
 const TwilioClient = require('twilio')(accountSid, authToken);
 
@@ -27,6 +28,7 @@ try{
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -55,6 +57,7 @@ try{
   transporter.sendMail(mailOptions, function(error, info){
     if (error) {
       console.log(error);
+      logger.error({message:"An error occurred ", error:error})
       return res.status(500).send("There was a problem trying to send the email")
     } else {
       console.log('Email sent: ' + info.response);
@@ -67,6 +70,7 @@ try{
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -93,6 +97,7 @@ try{
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }

@@ -8,6 +8,7 @@ var express = require('express'),
     
 var router = express.Router();
 const {Insight}=require('../models/insight');
+const logger= require('../config/logger');
 
 var FeedManager = stream_node.FeedManager; 
 var StreamMongoose = stream_node.mongoose;

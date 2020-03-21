@@ -8,6 +8,7 @@ var express = require('express'),
 var FeedManager = stream_node.FeedManager;
 var StreamMongoose = stream_node.mongoose;
 var StreamBackend = new StreamMongoose.Backend();
+const logger=require('../config/logger');
 
 var enrichActivities = function(body) {
     var activities = body.results;
@@ -47,7 +48,7 @@ var enrichAggregatedActivities = function(body) {
         })
         .then(function(enrichedActivities) {
             console.log(enrichedActivities);
-            res.send({
+            res.status(200).send({
                 activities: enrichedActivities,
                 count: enrichedActivities.length,
                 layout: false,
@@ -60,6 +61,7 @@ var enrichAggregatedActivities = function(body) {
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }

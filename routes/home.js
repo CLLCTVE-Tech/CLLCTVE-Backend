@@ -34,6 +34,8 @@ var express = require('express'),
         return StreamBackend.enrichAggregatedActivities(activities);
     };
 
+const logger= require('../config/logger');
+
 
 
     router.use(auth, function(req, res, next) {
@@ -52,6 +54,7 @@ var express = require('express'),
             next();
         } else {
             console.error(error.stack);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send('An error occured.');
         }
     });
@@ -84,11 +87,12 @@ var express = require('express'),
 
 router.get('/account', auth, function(req, res) {
     try{
-        res.send({ currentUser: req.user.id });
+        res.status(200).send({ currentUser: req.user.id });
     }
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -99,7 +103,7 @@ router.get('/account', auth, function(req, res) {
     router.get('/flat', auth, function(req, res, next) {
 
         try{
-        //res.send(req.user)
+       
 
         var flatFeed = FeedManager.getNewsFeeds(req.user.id)['flat'];
         console.log('flatFeed', flatFeed);
@@ -115,7 +119,7 @@ router.get('/account', auth, function(req, res) {
                     path: req.url,
                 })
 
-                res.send({
+                res.status(200).send({
                     title: "Flat Feed",
                     location: 'feed',
                     user: req.user,
@@ -129,6 +133,7 @@ router.get('/account', auth, function(req, res) {
         catch(error){
 
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -146,7 +151,7 @@ router.get('/account', auth, function(req, res) {
             .then(function(enrichedActivities) {
 
                 console.log(enrichedActivities)
-                res.send({
+                res.status(200).send({
                     location: 'aggregated_feed',
                     user: req.user,
                     activities: enrichedActivities,
@@ -158,6 +163,7 @@ router.get('/account', auth, function(req, res) {
         catch(error){
 
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -176,7 +182,7 @@ router.get('/account', auth, function(req, res) {
                     if (err) next(err);
                     await User.findOneAndUpdate({_id :req.user.id}, {$inc : { following: 1 }});
                     await User.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: 1 }});
-                    res.set('Content-Type', 'application/json');
+                    
                     return res.status(200).send({ follow: { id: req.body.target } });
                 });
             } else {
@@ -188,6 +194,7 @@ router.get('/account', auth, function(req, res) {
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -206,8 +213,8 @@ router.get('/account', auth, function(req, res) {
                     if (err) next(err);
                     await User.findOneAndUpdate({_id :req.user.id}, {$inc : { following: -1 }});
                     await User.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: -1 }});
-                    res.set('Content-Type', 'application/json');
-                    return res.send({ follow: { id: req.body.target } });
+                    
+                    return res.status(200).send({ follow: { id: req.body.target } });
                 });
             } else {
                 return res.status(404).send('Not found');
@@ -219,6 +226,7 @@ router.get('/account', auth, function(req, res) {
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -245,7 +253,7 @@ router.get('/account', auth, function(req, res) {
             for (i=0; i< values.mentions.length; i++) {
 
                 var target=await User.findOne({username: values.mentions[i].substr(1)})
-                if (!target) return res.send("The user you mentioned does not exist!")
+                if (!target) return res.status(404).send("The user you mentioned does not exist!")
 
                 mentionData= {user: req.user.id, target: target._id, tweet: newTweet._id};
                 mention=new Mentions(mentionData);
@@ -266,7 +274,6 @@ router.get('/account', auth, function(req, res) {
 
         newTweet.save(async function(err) {
             if (err) next(err);
-                res.set('Content-Type', 'application/json');
                 await User.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: 1 }});
                 return res.status(200).send({ tweet: req.body.tweet });
                 });
@@ -275,6 +282,7 @@ router.get('/account', auth, function(req, res) {
         catch(error){
 
                 console.error(error);
+                logger.error({message:"An error occurred ", error:error})
                 return res.status(500).send("Sorry an error occured please try again later.");
         
         }
@@ -325,13 +333,13 @@ router.get('/account', auth, function(req, res) {
                 }
             });
         
-            res.set('Content-Type', 'application/json');
             return res.status(200).send({ tweet: req.body.tweet});
 
         }
         catch(error){
 
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -350,7 +358,7 @@ router.get('/account', auth, function(req, res) {
         var like = new Like(likeData);
         like.save(async function(err) {
             if (err) next(err);
-                res.set('Content-Type', 'application/json');
+                
                 await Tweet.findOneAndUpdate({_id :req.body.tweetId}, {$inc : { likes: 1 }});
                 return res.status(200).send({ like: req.body.tweetId });
                 });
@@ -360,6 +368,7 @@ router.get('/account', auth, function(req, res) {
         catch(error){
 
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -380,7 +389,6 @@ router.get('/account', auth, function(req, res) {
             }
         });
     
-        res.set('Content-Type', 'application/json');
         return res.status(200).send({ like: req.body.tweetId});
 
     }
@@ -389,6 +397,7 @@ router.get('/account', auth, function(req, res) {
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -428,6 +437,7 @@ router.get('/account', auth, function(req, res) {
         catch(error){
 
             console.error(error);
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured please try again later.");
     
     }
@@ -487,13 +497,13 @@ router.get('/account', auth, function(req, res) {
             }
         });
 
-        res.set('Content-Type', 'application/json');
         return res.status(200).send({ comment: req.body.tweetId});
 
     }
     catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
 
 }

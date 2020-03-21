@@ -6,7 +6,7 @@ const express= require('express');
 const lodash=require('lodash');
 const jwt=require('jsonwebtoken');
 const router=express.Router();
-const bcrypt =require('bcrypt');
+const bcrypt =require('bcryptjs');
 const auth=require("../middleware/auth");
 const admin = require('../middleware/admin');
 const Joi=require('joi');
@@ -16,6 +16,7 @@ const crypto= require('crypto');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const config= require('config');
+const logger=require('../config/logger');
 
 
 var mailchimpInstance   = config.get("mailchimpInstance"),
@@ -41,7 +42,7 @@ router.get('/confirmation/:token', async (req,res)=>{
       // If we found a token, find a matching user
       let user= await User.findOne({ _id: token.user})
           if (!user) return res.status(404).send({ msg: 'We were unable to find a user for this token.' });
-          if (user.isActive) return res.status(404).send({ type: 'already-verified', msg: 'This user has already been verified.' });
+          if (user.isActive) return res.status(401).send({ type: 'already-verified', msg: 'This user has already been verified.' });
   
           // Verify and save the user
         user.isActive= true;
@@ -70,7 +71,7 @@ router.get('/confirmation/:token', async (req,res)=>{
                   console.log('Signed Up!');
                   return res.status(200).send(user);
                 } else {
-                  return res.status(404).send('Sign Up Failed :(');
+                  return res.status(401).send('Sign Up Failed :(');
                 }
             });
   
@@ -78,6 +79,7 @@ router.get('/confirmation/:token', async (req,res)=>{
   
           catch(error){
             console.log(error)
+            logger.error({message:"An error occurred ", error:error})
             return res.status(500).send("Sorry an error occured");
           }
   
@@ -119,6 +121,7 @@ router.get('/confirmation/:token', async (req,res)=>{
       transporter.sendMail(mailOptions, function(error, info){
         if (error) {
           console.log(error);
+          logger.error({message:"An error occurred ", error:error})
           return res.status(500).send("There was a problem trying to send the email")
         } else {
           console.log('Email sent: ' + info.response);
@@ -130,6 +133,7 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     catch(error){
         console.log(error);
+        logger.error({message:"An error occurred ", error:error})
           return res.status(500).send("There was a problem trying to send the email")
     }
 
@@ -152,20 +156,20 @@ router.get('/confirmation/:token', async (req,res)=>{
 
 
       //now lets compare passwords, hash them and save them to the database.
-        if (req.body.password !=req.body.passwordAgain) return res.status(404).send('Passwords do not match');
+        if (req.body.password !=req.body.passwordAgain) return res.status(401).send('Passwords do not match');
 
       //check if password is complex enough
       var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
      if(!regularExpression.test(req.body.password)) 
-     return res.status(404).send("password should contain atleast one number and one special character");
+     return res.status(401).send("password should contain atleast one number and one special character");
 
         const decryptedPassword =await bcrypt.compare(req.body.password, user.password);
 
         if (decryptedPassword) 
-        return res.status(404).send("New password cannot match old password");
+        return res.status(401).send("New password cannot match old password");
 
         const{error}= Joi.validate({password:req.body.password}, {password: Joi.string().min(8).max(255).required()});
-        if (error) return res.status(404).send(error.details[0].message);
+        if (error) return res.status(401).send(error.details[0].message);
         
         const salt=await bcrypt.genSalt(10);
         user.password= await bcrypt.hash(req.body.password, salt);
@@ -180,6 +184,7 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     catch(error){
         console.log(error);
+        logger.error({message:"An error occurred ", error:error})
           return res.status(500).send("There was a problem trying to send the email")
     }
 
@@ -222,6 +227,7 @@ router.get('/confirmation/:token', async (req,res)=>{
       transporter.sendMail(mailOptions, function(error, info){
         if (error) {
           console.log(error);
+          logger.error({message:"An error occurred ", error:error})
           return res.status(500).send("There was a problem trying to send the email")
         } else {
           console.log('Email sent: ' + info.response);

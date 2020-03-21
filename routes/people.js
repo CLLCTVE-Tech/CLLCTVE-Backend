@@ -12,6 +12,7 @@ var router = express.Router(),
     Follow = models.Follow;
     
 var StreamMongoose = stream_node.mongoose;
+const logger= require('../config/logger');
 
 var did_i_follow = function(users, followers) {
         var followed_users_ids = _.map(followers, function(item) {
@@ -56,6 +57,7 @@ var did_i_follow = function(users, followers) {
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }
@@ -90,6 +92,7 @@ router.get('/:id', auth, async function(req, res) {
 catch(error){
 
     console.error(error);
+    logger.error({message:"An error occurred ", error:error})
     return res.status(500).send("Sorry an error occured please try again later.");
 
 }

@@ -7,8 +7,8 @@ const contributor=require("../middleware/contributor");
 const express= require('express');
 router=express.Router();
 
-
 const {imageUpload}= require('../cloud/config/imageUpload');
+const logger=require('../config/logger');
 
 
 //code to display a blog post by its id, will be moved later
@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
     } catch(error){
         
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
     };
 });  
@@ -85,11 +86,15 @@ router.post('/create', [auth], async (req, res) => {
     });
 
     await post.save();
-    return res.status(200).send(post);
+    return res.status(200).send({
+        message: "The post was successfully created",
+        post
+    });
 
     } catch(error){
 
         console.error(error);
+        logger.error({message:"An error occurred ", error:error})
         return res.status(500).send("Sorry an error occured please try again later.");
     };
 
