@@ -100,8 +100,8 @@ const userSchema=new Mongoose.Schema({
         of: String
       },
 
-    joined: {type: Date, required: true, defualt: Date.now},
-    onboarded: {type: Boolean, required: true, default: false}
+    joined: {type: Date, defualt: Date.now},
+    onboarded: {type: Boolean, default: false}
 });
 
 //We have generated webtokens for each user in different files (auth and users), however,
@@ -165,12 +165,12 @@ function validateExperience(userExperience){
 
     schema={
         position: Joi.string().min(5).max(60).required(),
-        company: Joi.string().min(5).max(60).required(),
-        city: Joi.string().min(5).max(25).required(),
-        state: Joi.string().min(5).max(20).required(),
-        from: Joi.string().min(3).required(),
-        to: Joi.string().min(3).required(),
-        links: Joi.string().min(5).max(120),
+        company: Joi.string().min(3).max(60).required(),
+        city: Joi.string().min(3).max(25).required(),
+        state: Joi.string().min(2).max(20).required(),
+        from: Joi.string().min(2).required(),
+        to: Joi.string().min(2).required(),
+        links: Joi.string().max(150),
         description: Joi.string().min(15).max(200).required()
     };
 
@@ -198,12 +198,12 @@ function validateCertification(certification){
     schema={
         title: Joi.string().min(5).max(60).required(),
         organization: Joi.string().min(5).max(60).required(),
-        issuedMonth: Joi.string().min(3).max(15).required(),
-        issuedYear: Joi.string().min(3).max(15).required(),
-        expMonth: Joi.string().min(3).max(15).required() ,
-        expYear:Joi.string().min(3).max(15).required(),
+        issuedMonth: Joi.string().min(2).max(15).required(),
+        issuedYear: Joi.string().min(2).max(15).required(),
+        expMonth: Joi.string().min(2).max(15).required() ,
+        expYear:Joi.string().min(2).max(15).required(),
         certificationID: Joi.string().min(5).max(50).required(),
-        links:Joi.string().min(15).max(150),
+        links:Joi.string().max(150),
         description: Joi.string().min(20).max(150)
     }
 
@@ -216,9 +216,9 @@ function validateHonorsAwards(award){
         title: Joi.string().min(5).max(60).required(),
         association: Joi.string().min(5).max(100).required(),
         issuer: Joi.string().min(5).max(60).required(),
-        month: Joi.string().min(3).max(15).required(),
-        year: Joi.string().min(3).max(15).required(),
-        links: Joi.string().min(15).max(150),
+        month: Joi.string().min(2).max(15).required(),
+        year: Joi.string().min(2).max(15).required(),
+        links: Joi.string().max(150),
         description: Joi.string().min(20).max(150)
      
     }
@@ -235,7 +235,7 @@ const educationSchema=new Mongoose.Schema({
         major: {type: String, required: true},
         gradYear: {type: String, required: true},
         gradMonth: {type: String, required: true},
-        date: {type: Date, required: true, defualt: Date.now} 
+        date: {type: Date, defualt: Date.now} 
 
 });
 
@@ -248,9 +248,9 @@ const experienceSchema=new Mongoose.Schema({
         state: {type: String, required: true},
         from: {type: String, required: true},
         to: {type: String, required: true},
-        links: {type: String, required: true},
+        links: {type: String, default:""},
         description: {type: String, required: true},
-        date: {type: Date, required: true, defualt: Date.now} 
+        date: {type: Date, defualt: Date.now} 
 
 
 });
@@ -265,9 +265,9 @@ const certificationSchema=new Mongoose.Schema({
         expMonth: {type: String, required: true} ,
         expYear:{type: String, required: true},
         certificationID: {type: String, required: true},
-        links: {type: String, required: true},
+        links: {type: String, default:""},
         description: {type: String, required: true},
-        date: {type: Date, required: true, defualt: Date.now} 
+        date: {type: Date, defualt: Date.now} 
 
 });
 
@@ -279,9 +279,9 @@ const honorsAwardSchema=new Mongoose.Schema({
         issuer: {type: String, required: true},
         month: {type: String, required: true},
         year: {type: String, required: true},
-        links: {type: String, required: true},
+        links: {type: String, default:""},
         description: {type: String, required: true},
-        date: {type: Date, required: true, defualt: Date.now} 
+        date: {type: Date,  defualt: Date.now} 
 
 });
 

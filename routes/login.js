@@ -29,10 +29,10 @@ router.post('/', async (req,res) =>{
     if (!user.isActive) return res.status(401).send('Your account has not been verfified.');
     
     //if the user has not completed the onboarding process, let them know.
-    if (!user.onboarded) return res.status(401).send({
+    /*if (!user.onboarded) return res.status(401).send({
         message: 'The User has not completed the onboarding process',
         user: req.user.id,
-        email: user.email});
+        email: user.email}); */
     
     //Lets check if the password matches the encrypted password in the database
     const validPassword=await bcrypt.compare(req.body.password, user.password);
