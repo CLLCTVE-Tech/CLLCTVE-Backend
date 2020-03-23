@@ -36,6 +36,13 @@ const userSchema=new Mongoose.Schema({
         maxlength: 255,
         unique: true //prevents same email from being stored
     },
+    
+    phone:{
+        type: String,
+        unique: true,
+        minlength: 10,
+        maxlength: 10,
+    },
 
     //This is how we diffrentiate creatives from brands
     isBrand: {type: Boolean, required: true, default: false},
@@ -123,7 +130,8 @@ function validateUser(user){
         firstName: Joi.string().min(5).max(50).required(),
         lastName: Joi.string().min(5).max(50).required(),
         email: Joi.string().min(8).max(255).required().email(),
-        password: Joi.string().min(8).max(255).required()
+        password: Joi.string().min(8).max(255).required(),
+        phone: Joi.string().min(10).max(10)
     };
 
     return Joi.validate(user, schema);
@@ -150,7 +158,7 @@ function validateSkill(skill){
         skill: Joi.string().min(3).max(50)
     };
     return Joi.validate(skill, schema);
-        
+    
 };
 
 function validateSocialMedia(socialMedia){

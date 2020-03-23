@@ -1,4 +1,4 @@
-const {User, validateUser, validateUserName, validateDreamJob, 
+const {User, validateUser, validateUserName, validateDreamJob,
     validateSkill, validateEducation}= require('../models/user');
 const mongoose =require('mongoose');
 const express= require('express');
@@ -34,37 +34,19 @@ router.post('/signup', async (req,res) =>{
         phone: req.body.phone
     }
     let {error}= validateUser(userData);
-    if (error) return res.status(404).send(error.details[0].message);
+    if (error) return res.status(400).json({
+      status: 400,
+      message: error.details[0].message
+    });
 
     //check if email is an edu email for now.
     if (!req.body.email.endsWith(".edu"))
-    return res.status(404).send("Email must be an edu email"); 
+    return res.status(404).send("Email must be an edu email");
 
     //check if password is complex enough:
     var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
-    if(!regularExpression.test(req.body.password)) 
+    if(!regularExpression.test(req.body.password))
     return res.status(404).send("password should contain atleast one number and one special character");
-
-    let {invalid} = validateUserName({username:req.body.username});
-    if (invalid) return res.status(404).send(invalid.details[0].message);
-
-    //Validate Skills from front end
-    for (var i = 0; i < req.body.skills.length; i++) {
-      let {error}= validateSkill({skill:req.body.skills[i]});
-      if (error) return res.status(404).send(error.details[0].message);
-    }
-
-    //validate education array
-    for (var i = 0; i < req.body.education.length; i++) {
-      let {error}= validateEducation(req.body.education[i]);
-      if (error) return res.status(404).send(error.details[0].message);
-    }
-
-    //validate Dream Jobs
-    for (var i = 0; i < req.body.dreamJobs.length; i++) {
-      let {error}= validateDreamJob({dreamJob:req.body.dreamJobs[i]});
-      if (error) return res.status(404).send(error.details[0].message);
-    }
 
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
@@ -77,17 +59,13 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         phone: req.body.phone,
-        skills: req.body.skills,
-        dreamJobs: req.body.dreamJobs,
-        password: req.body.password,
-        education: req.body.education
+        password: req.body.password
     });
-
 
     const salt=await bcrypt.genSalt(10);
     user.password= await bcrypt.hash(req.body.password, salt);
 
-    //save new user object 
+    //save new user object
     await user.save();
 
     //create token for email verification
@@ -96,7 +74,7 @@ router.post('/signup', async (req,res) =>{
     // Save the verification token
     await token.save();
 
-    //send user verification email 
+    //send user verification email
     const transporter = nodemailer.createTransport(smtpTransport({
       service: 'gmail',
       auth: {
@@ -119,14 +97,14 @@ router.post('/signup', async (req,res) =>{
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
         console.log(error);
-        res.status(500).send("There was a problem trying to send the email")
+        return res.status(500).send("There was a problem trying to send the email")
       } else {
         console.log('Email sent: ' + info.response);
         //res.status(200).send('Email sent: ' + info.response)
       }
     });
 
-           
+    
     //we can use lodash to easily return fields we want to work with
     result=lodash.pick(user, ['firstName','email']);
     const web_token=user.generateAuthToken();
