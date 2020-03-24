@@ -7,6 +7,7 @@ const brands=require('./routes/brands');
 const blogs=require('./routes/blogs');
 var home=require('./routes/home');
 const path=require('path');
+const cors=require('cors');
 
 const notifications= require('./routes/notifications');
 const messages= require('./routes/messages');
@@ -40,9 +41,27 @@ const multerMid = multer({
 })
 
  
-/*cron.schedule('* * * * *', () => {
-  console.log('running a task every minute from index.js');
-}); */
+//set up Cors handler
+const originWhiteList = config.get("CLLCTVE_CORS");
+const corsHandler = cors({
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: [
+    'x-auth-token',
+    'X-Requested-With',
+    'Access-Control-Allow-Headers',
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Credentials',
+    'Authorization',
+    'Content-Type',
+    'dry-run',
+    'withCredentials',
+    'uid'
+  ],
+  credentials: true,
+  origin: (origin, cb) => {
+    cb(null, originWhiteList.indexOf(origin) !== -1);
+  },
+});
 
 const app=express();
 
@@ -50,13 +69,13 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 //for real time message responses
-io.on('connection', function(socket){
+/*io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('chat message', function(msg){
     console.log('message: ' + msg);
   });
 });
-
+*/
 
 //let app store files using multer
 app.use(multerMid.single('file'))
@@ -66,8 +85,8 @@ app.use(multerMid.single('file'))
 app.use(express.json());
 
 
-//For Pug
-app.set('view engine', 'pug');
+//enable Cross-origin resource sharing (CORS)
+app.use(corsHandler);
 
 
 //Check if jwtPrivateKey environment env has been set
@@ -117,7 +136,7 @@ const port = process.env.PORT || 3000;
 // for real time purposes
 
 app.get('/', (req,res)=>{
-  res.sendFile(__dirname + '/routes/message.html');
+  res.status(200).send('Welcome to the CLLCTVE API!!');
 });
   
 app.listen(port, function(){

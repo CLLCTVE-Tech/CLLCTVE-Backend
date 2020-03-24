@@ -1,4 +1,4 @@
-const {User, validateUser, validateUserName}= require('../models/user');
+const {User, validateBrand, validateUserName}= require('../models/user');
 const mongoose =require('mongoose');
 const express= require('express');
 const lodash=require('lodash');
@@ -25,19 +25,10 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password, 
+        phone: req.body.phone
     }
-    var {error}= validateUser(userData);
+    var {error}= validateBrand(userData);
     if (error) return res.status(401).send(error.details[0].message);
-
-    //validate Username as well
-
-    var {error}= validateUserName({username:req.body.username});
-
-    if (error){
-        console.log(error);
-        console.log(req.body);
-        return res.status(500).send(error.details[0].message);
-    } 
 
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
@@ -51,7 +42,7 @@ router.post('/signup', async (req,res) =>{
         lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password,
-        username: req.body.brandName
+        phone: req.body.phone
     });
 
     //hash and set user password
@@ -106,7 +97,7 @@ router.post('/signup', async (req,res) =>{
     });
            
     //we can use lodash to easily return fields we want to work with
-    result=lodash.pick(user, ['firstName','lastName', 'email', 'username']);
+    result=lodash.pick(user, ['firstName','lastName', 'email']);
     const web_token=user.generateAuthToken();
     //We can set and return response headers using web tokens
     return res.header('x-auth-token', web_token).send({

@@ -46,6 +46,8 @@ const userSchema=new Mongoose.Schema({
         maxlength: 50
     },
 
+    gradMonthYear: {type: String, required: false},
+
     //This is how we diffrentiate creatives from brands
     isBrand: {type: Boolean, required: true, default: false},
 
@@ -119,8 +121,20 @@ function validateUser(user){
     schema={
         firstName: Joi.string().min(3).max(50).required(),
         lastName: Joi.string().min(3).max(50).required(),
-        username: Joi.string().min(5).max(50).required(),
-        phone: Joi.string().min(10).max(15),
+        phone: Joi.string().allow('').optional().max(10),
+        email: Joi.string().min(8).max(255).required().email(),
+        password: Joi.string().min(8).max(255).required(),
+        gradMonthYear: Joi.string().min(5).max(50).required(),
+    };
+
+    return Joi.validate(user, schema);
+};
+
+function validateBrand(user){
+    schema={
+        firstName: Joi.string().min(3).max(50).required(),
+        lastName: Joi.string().min(3).max(50).required(),
+        phone: Joi.string().allow('').optional().max(10),
         email: Joi.string().min(8).max(255).required().email(),
         password: Joi.string().min(8).max(255).required()
     };
@@ -170,7 +184,7 @@ function validateExperience(userExperience){
         state: Joi.string().min(2).max(20).required(),
         from: Joi.string().min(2).required(),
         to: Joi.string().min(2).required(),
-        links: Joi.string().max(150),
+        links: Joi.string().allow('').optional().max(150),
         description: Joi.string().min(15).max(200).required()
     };
 
@@ -203,7 +217,7 @@ function validateCertification(certification){
         expMonth: Joi.string().min(2).max(15).required() ,
         expYear:Joi.string().min(2).max(15).required(),
         certificationID: Joi.string().min(5).max(50).required(),
-        links:Joi.string().max(150),
+        links:Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)
     }
 
@@ -218,7 +232,7 @@ function validateHonorsAwards(award){
         issuer: Joi.string().min(5).max(60).required(),
         month: Joi.string().min(2).max(15).required(),
         year: Joi.string().min(2).max(15).required(),
-        links: Joi.string().max(150),
+        links: Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)
      
     }
@@ -292,6 +306,7 @@ const HonorAward=Mongoose.model("Honor Awards", honorsAwardSchema);
 
 
 exports.validateUser= validateUser;
+exports.validateBrand= validateBrand;
 exports.validateDreamJob=validateDreamJob;
 exports.validateSkill=validateSkill;
 exports.validateExperience=validateExperience;

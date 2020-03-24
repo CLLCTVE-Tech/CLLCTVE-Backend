@@ -40,11 +40,12 @@ router.post('/', async (req,res) =>{
 
     //lets create a json web token to identify users. this will be sent to the server
     const web_token=user.generateAuthToken();
+    const result=lodash.pick(user, ['firstName','lastName', 'email', 'phone']);
 
     //its also good practice to store the private key in an environment variable.
     return res.header('x-auth-token', web_token).status(200).send({
         message: "The user was successfully logged in",
-        User: user,
+        user: result,
         token: web_token
     })
 }

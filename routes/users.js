@@ -31,7 +31,9 @@ router.post('/signup', async (req,res) =>{
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
-        password: req.body.password
+        password: req.body.password,
+        phone: req.body.phone,
+        gradMonthYear: req.body.gradMonthYear
     }
     let {error}= validateUser(userData);
     if (error) return res.status(401).send(error.details[0].message);
@@ -44,10 +46,6 @@ router.post('/signup', async (req,res) =>{
     var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
     if(!regularExpression.test(req.body.password)) 
     return res.status(401).send("password should contain atleast one number and one special character");
-
-    let {invalid} = validateUserName({username:req.body.username});
-    if (invalid) return res.status(401).send(invalid.details[0].message);
-
     
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
@@ -58,9 +56,10 @@ router.post('/signup', async (req,res) =>{
     user=new User({
         firstName: req.body.firstName,
         lastName: req.body.lastName,
+        phone: req.body.phone,
         email: req.body.email,
         password: req.body.password,
-        education: req.body.education
+        gradMonthYear: req.body.gradMonthYear
     });
 
     const salt=await bcrypt.genSalt(10);
@@ -78,10 +77,13 @@ router.post('/signup', async (req,res) =>{
     //send user verification email 
     const transporter = nodemailer.createTransport(smtpTransport({
       service: 'gmail',
+      
       auth: {
         user: config.get('emailUser'),
-        pass: config.get("emailPass")
-      }
+        pass: config.get('emailPass')
+
+      },
+
     }));
 
     var mailOptions = {
@@ -99,7 +101,7 @@ router.post('/signup', async (req,res) =>{
       if (error) {
         console.log(error);
         logger.error({message:"An error occurred ", error:error})
-        return res.status(500).send("There was a problem trying to send the email")
+        return res.status(500).send("There was a problem trying to send the email", error)
       } else {
         console.log('Email sent: ' + info.response);
         
@@ -108,10 +110,12 @@ router.post('/signup', async (req,res) =>{
 
            
     //we can use lodash to easily return fields we want to work with
-    result=lodash.pick(user, ['firstName','email']);
+    result=lodash.pick(user, ['firstName','lastName', 'email', 'phone']);
     const web_token=user.generateAuthToken();
     //We can set and return response headers using web tokens
-    return res.header('x-auth-token', web_token).status(200).send({"user":user._id,"web_token":web_token});
+    return res.header('x-auth-token', web_token).status(200).send(
+      {"token":web_token,
+      user:result});
 
     } catch(error){
 
