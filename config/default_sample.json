@@ -2,6 +2,7 @@
     "jwtPrivateKey":"",
     "brandPrivateKey":"",
     "mongoString": "",
+    "mongoStringV2":"",
     "mailchimpInstance"  :"",
     "creativeID"      :  "",
     "brandID"            : "",
@@ -15,7 +16,8 @@
     "gcpProjectId": "",
     "twilAccountSid" : "",
     "twilAuthToken" : "",
-    "twilNumber" :""
+    "twilNumber" :"",
+    "CLLCTVE_CORS": ""
 
 
 }
