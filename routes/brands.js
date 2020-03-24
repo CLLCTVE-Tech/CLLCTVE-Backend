@@ -18,7 +18,7 @@ router.post('/signup', async (req,res) =>{
 
     try{
 
-      console.log(req.body);
+      //console.log(req.body);
     //validate the user object
     userData={
         firstName: req.body.firstName,
@@ -29,6 +29,11 @@ router.post('/signup', async (req,res) =>{
     }
     var {error}= validateBrand(userData);
     if (error) return res.status(401).send(error.details[0].message);
+
+
+    var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
+    if(!regularExpression.test(req.body.password)) 
+    return res.status(401).send("password should contain at least one number and one special character");
 
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user

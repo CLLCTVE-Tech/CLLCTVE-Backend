@@ -43,9 +43,10 @@ router.post('/signup', async (req,res) =>{
     return res.status(401).send("Email must be an edu email"); 
 
     //check if password is complex enough:
-    var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+    //var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+    var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
     if(!regularExpression.test(req.body.password)) 
-    return res.status(401).send("password should contain atleast one number and one special character");
+    return res.status(401).send("password should contain at least one number and one special character");
     
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
