@@ -3,7 +3,6 @@ exports.config = {
    * GetStream.io API key
    */
   apiKey: '',
-  secretOrPrivateKey: '',
   /**
    * GetStream.io API Secret
    */
