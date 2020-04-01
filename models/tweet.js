@@ -1,5 +1,5 @@
 var mongoose = require('mongoose'),
-//config = require('./config/config'),
+// config = require('./config/config'),
 _ = require('underscore'),
 Schema = mongoose.Schema,
 stream_node = require('getstream-node');
@@ -99,8 +99,8 @@ const Tag= new mongoose.model('Tags', tagSchema);
 
 
 var tweetSchema = new Schema(
-	{ 
-    
+	{
+  
 		user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     image_url: { type: String, required: false },
     tweet:{ type: String, required: false},
@@ -128,7 +128,7 @@ var Tweet = mongoose.model('Tweet', tweetSchema);
 
 
 var likeSchema = new Schema(
-	{ 
+	{
     
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
@@ -160,11 +160,11 @@ var Like= mongoose.model('Likes', likeSchema);
 
 
 var commentSchema = new Schema(
-	{ 
+	{
     
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-    tweet:{ type: Schema.Types.ObjectId, required: true, ref: 'Tweet' }, 
+    tweet:{ type: Schema.Types.ObjectId, required: true, ref: 'Tweet' },
     comment: {type: Schema.Types.ObjectId, required:true, ref: 'Tweet'},
     date:{type: Date, required: true, default: Date.now}
 	},
@@ -188,7 +188,7 @@ commentSchema.statics.pathsToPopulate = function() {
 	return ['user', 'target'];
 };
 
-var Comment= mongoose.model('Comments', commentSchema); 
+var Comment= mongoose.model('Comments', commentSchema);
 
 var followSchema = new Schema(
 	{

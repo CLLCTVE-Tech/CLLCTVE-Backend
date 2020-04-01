@@ -14,7 +14,8 @@ const crypto= require('crypto');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const config = require('config');
-
+const joiToForms = require('joi-errors-for-forms').form;
+const convertToForms = joiToForms();
 
 //Lets set up a router for our users page
 
@@ -34,10 +35,14 @@ router.post('/signup', async (req,res) =>{
         phone: req.body.phone
     }
     let {error}= validateUser(userData);
-    if (error) return res.status(400).json({
-      status: 400,
-      message: error.details[0].message
-    });
+    if (error) {
+      console.log('validateUser, error: ', error);
+      console.log('validateUser, convertToForms(error): ', convertToForms(error));
+      return res.status(422).json({
+        status: 422,
+        message: convertToForms(error)
+      });
+    }
 
     //check if email is an edu email for now.
     if (!req.body.email.endsWith(".edu"))

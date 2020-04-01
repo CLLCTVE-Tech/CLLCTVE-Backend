@@ -17,10 +17,20 @@ const people=require('./routes/people');
 const jobs=require('./routes/jobs');
 const login=require('./routes/login');
 const verify= require('./routes/verify');
+const applications=require('./routes/applications');
+const admin=require('./routes/admin');
+const insights= require('./routes/insights');
+const status= require('./config/status');
+
+
 const cron = require('node-cron');
 const bodyParser=require('body-parser');
 const multer=require('multer');
-const cors = require('cors');
+
+//Will be used for logging into mongoDB
+const winston = require('winston');
+require('winston-mongodb');
+const logger=require('./config/logger');
 
 const multerMid = multer({
   storage: multer.memoryStorage(),
@@ -29,23 +39,13 @@ const multerMid = multer({
   },
 })
 
-
-/*cron.schedule('* * * * *', () => {
-  console.log('running a task every minute from index.js');
-}); */
-
-const app=express();
-
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-
-app.disable('x-powered-by');
-
+//set up Cors handler
 const originWhiteList = config.get("CLLCTVE_CORS");
 
 const corsHandler = cors({
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: [
+    'x-auth-token',
     'X-Requested-With',
     'Access-Control-Allow-Headers',
     'Access-Control-Allow-Origin',
@@ -62,28 +62,30 @@ const corsHandler = cors({
   },
 });
 
-// CORS
-app.use(corsHandler);
+const app=express();
+
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
 //for real time message responses
-io.on('connection', function(socket){
+/*io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('chat message', function(msg){
     console.log('message: ' + msg);
   });
 });
-
+*/
 
 //let app store files using multer
 app.use(multerMid.single('file'))
+
 
 //let app parse json objects
 app.use(express.json());
 
 
-//For Pug
-app.set('view engine', 'pug');
-
+//enable Cross-origin resource sharing (CORS)
+app.use(corsHandler);
 
 //Check if jwtPrivateKey environment env has been set
 if (!config.get("jwtPrivateKey")){
@@ -105,12 +107,9 @@ mongoose.connect(connection_string, { useNewUrlParser: true })
 .then(()=> console.log("Successfully Connected to Database..."))
 .catch(err=> console.log("Failed to connect to databse..."));
 
-
 //enable this so we can parse for json objects in the body of the request
 //app.use(express.json());
 //given the current route, express app will use user that was router exported
-var router = express.Router();
-
 app.use('/api/home', home);
 app.use('/api/notifications', notifications);
 app.use('/api/users', users);
@@ -135,13 +134,12 @@ const port = process.env.PORT || 3001;
 // for real time purposes
 
 app.get('/', (req,res)=>{
-  res.sendFile(__dirname + '/routes/message.html');
+  res.status(200).send('Welcome to the CLLCTVE API!!');
 });
 
-
-
-
 app.listen(port, function(){
+
   console.log(`Listening on port ${port}....`);
-})
+  logger.log("info",`Listening on port ${port}....`);
+});
 //app.listen(port, ()=>{console.log(`Listening on port ${port}....`)});

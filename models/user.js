@@ -134,7 +134,7 @@ function validateUser(user){
         phone: Joi.string().min(10).max(10)
     };
 
-    return Joi.validate(user, schema);
+    return Joi.validate(user, schema, { convert: true, abortEarly: false });
 };
 
 function validateUserName(userName){
