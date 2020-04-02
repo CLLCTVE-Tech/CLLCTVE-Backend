@@ -127,7 +127,7 @@ userSchema.methods.generateAuthToken = function() {
 const UserModel=Mongoose.model("User", userSchema);
 
 function validateUser(user){
-    schema={
+    let schema={
         firstName: Joi.string().min(5).max(50).required(),
         lastName: Joi.string().min(5).max(50).required(),
         email: Joi.string().min(8).max(255).required().email(),
@@ -139,7 +139,7 @@ function validateUser(user){
 };
 
 function validateUserName(userName){
-    schema={
+    let schema={
         username: Joi.string().min(5).max(50).required()
     };
     return Joi.validate(userName, schema);
@@ -147,7 +147,7 @@ function validateUserName(userName){
 
 function validateDreamJob(job){
     
-    schema={
+    let schema={
         dreamJob: Joi.string().min(5).max(50).required()
     };
 
@@ -155,7 +155,7 @@ function validateDreamJob(job){
 };
 
 function validateSkill(skill){
-    schema={
+    let schema={
         skill: Joi.string().min(3).max(50)
     };
     return Joi.validate(skill, schema);
@@ -164,7 +164,7 @@ function validateSkill(skill){
 
 function validateSocialMedia(socialMedia){
 
-    schema={
+    let schema={
     twitter:Joi.string().min(4).max(250),
     linkedin:Joi.string().min(4).max(250),
     instagram:Joi.string().min(4).max(250),
@@ -178,7 +178,7 @@ function validateSocialMedia(socialMedia){
 
 function validateExperience(userExperience){
 
-    schema={
+    let schema={
         title: Joi.string().min(5).max(60).required(),
         company: Joi.string().min(5).max(60).required(),
         from: Joi.string().required(),
@@ -187,15 +187,15 @@ function validateExperience(userExperience){
         currentlyWorking: Joi.boolean()
     };
 
-    if (userExperience.currentlyWorking==true) schema.to=Joi.date().string();
+    if (userExperience.currentlyWorking===true) schema.to=Joi.date().string();
 
-    return Joi.validate(userExperience, schema);
+    return Joi.validate(userExperience, schema, { convert: true, abortEarly: false });
 }
 
 function validateEducation(education){
 
-    schema={
-        school: Joi.string().min(5).max(60).required(),
+    let schema={
+        school: Joi.string().min(3).max(60).required(),
         degree: Joi.string().min(5).max(60).required(),
         major: Joi.string().min(5).max(60).required(),
         gradMonthYear: Joi.string().min(5).max(50).required(),
@@ -206,7 +206,7 @@ function validateEducation(education){
 
 function validateCertification(certification){
 
-    schema={
+    let schema={
         title: Joi.string().min(5).max(60).required(),
         organization: Joi.string().min(5).max(60).required(),
         issuedMonthYear: Joi.string().min(5).max(50).required(),
@@ -222,7 +222,7 @@ function validateCertification(certification){
 
 function validateHonorsAwards(award){
 
-    schema={
+    let schema={
         title: Joi.string().min(5).max(60).required(),
         association: Joi.string().min(5).max(100).required(),
         issuer: Joi.string().min(5).max(60).required(),
@@ -238,34 +238,34 @@ function validateHonorsAwards(award){
 
 const educationSchema=new Mongoose.Schema({
 
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     school: {type: String, required: true},
-        degree: {type: String, required: true},
-        major: {type: String, required: true},
-        gradMonthYear: {type: String, required: false},
-        date: {type: Date, defualt: Date.now}
+    degree: {type: String, required: true},
+    major: {type: String, required: true},
+    gradMonthYear: {type: String, required: false},
+    date: {type: Date, default: Date.now}
 
 });
 
 const experienceSchema=new Mongoose.Schema({
 
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     position: {type: String, required: true},
-        company: {type: String, required: true},
-        city: {type: String, required: true},
-        state: {type: String, required: true},
-        from: {type: String, required: true},
-        to: {type: String, required: true},
-        links: {type: String, default:""},
-        description: {type: String, required: true},
-        date: {type: Date, defualt: Date.now}
+    company: {type: String, required: true},
+    city: {type: String, required: true},
+    state: {type: String, required: true},
+    from: {type: String, required: true},
+    to: {type: String, required: true},
+    links: {type: String, default:""},
+    description: {type: String, required: true},
+    date: {type: Date, default: Date.now}
 
 
 });
 
 const certificationSchema=new Mongoose.Schema({
 
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     title: {type: String, required: true},
         organization: {type: String, required: true},
         issuedMonthYear: {type: String, required: true},
@@ -273,27 +273,27 @@ const certificationSchema=new Mongoose.Schema({
         certificationID: {type: String, required: true},
         links: {type: String, default:""},
         description: {type: String, required: true},
-        date: {type: Date, defualt: Date.now}
+        date: {type: Date, default: Date.now}
 
 });
 
 const honorsAwardSchema=new Mongoose.Schema({
 
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     title: {type: String, required: true},
         association: {type: String, required: true},
         issuedMonthYear: {type: String, required: true},
         year: {type: String, required: true},
         links: {type: String, default:""},
         description: {type: String, required: true},
-        date: {type: Date,  defualt: Date.now}
+        date: {type: Date,  default: Date.now}
 
 });
 
-const Education=Mongoose.model("Education", educationSchema);
-const Experience=Mongoose.model("Experience", experienceSchema);
-const Certification=Mongoose.model("Certification", certificationSchema);
-const HonorAward=Mongoose.model("Honor Awards", honorsAwardSchema);
+const EducationModel=Mongoose.model("Education", educationSchema);
+const ExperienceModel=Mongoose.model("Experience", experienceSchema);
+const CertificationModel=Mongoose.model("Certification", certificationSchema);
+const HonorAwardModel=Mongoose.model("Honor Awards", honorsAwardSchema);
 
 
 exports.validateUser= validateUser;
@@ -301,6 +301,11 @@ exports.validateUserName= validateUserName;
 exports.validateDreamJob=validateDreamJob;
 exports.validateSkill=validateSkill;
 exports.validateExperience=validateExperience;
+exports.validateEducation=validateEducation;
 exports.validateSocialMedia=validateSocialMedia;
 //exports.validateUser= validateUser;
 exports.User= UserModel;
+exports.Education= EducationModel;
+exports.Experience= ExperienceModel;
+exports.Certification= CertificationModel;
+exports.HonorAward= HonorAwardModel;

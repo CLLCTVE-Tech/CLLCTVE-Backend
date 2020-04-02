@@ -19,6 +19,7 @@ const smtpTransport = require('nodemailer-smtp-transport');
 const config = require('config');
 const joiToForms = require('joi-errors-for-forms').form;
 const convertToForms = joiToForms();
+const setUserInfo = require('../lib/helpers').setUserInfo;
 
 //Lets set up a router for our users page
 
@@ -115,10 +116,18 @@ router.post('/signup', async (req,res) =>{
 
     
     //we can use lodash to easily return fields we want to work with
-    result=lodash.pick(user, ['firstName','email']);
+    // result=lodash.pick(user, ['firstName','email']);
     const web_token=user.generateAuthToken();
     //We can set and return response headers using web tokens
-    return res.header('x-auth-token', web_token).send(web_token);
+    const userInfo = setUserInfo(user);
+
+    //its also good practice to store the private key in an environment variable.
+    return res.header('x-auth-token', web_token)
+      .status(200)
+      .json({
+        token: `Bearer ${web_token}`,
+        user: userInfo
+      });
 
     } catch(error){
 
@@ -129,9 +138,10 @@ router.post('/signup', async (req,res) =>{
 });
 
 router.post('/onboarding', auth, async(req,res)=>{
-
+  
+  const education = req.body.education;
+  console.log('education: ', education);
   try{
-
       const current_user=await User.findOne({_id:req.user.id}).select("-password");
       if (!current_user) return res.status(404).send("The User was not found. ");
 
@@ -139,36 +149,41 @@ router.post('/onboarding', auth, async(req,res)=>{
       //an error will occur.
 
       if (!req.body.hasOwnProperty("education")) return res.status(401).send("Education is required in the onboarding process");
-      if (!req.body.hasOwnProperty("experience")) return res.status(401).send("Experience is required in the onboarding process");
+      // if (!req.body.hasOwnProperty("experience")) return res.status(401).send("Experience is required in the onboarding process");
 
       //check if education and experience are arrays
 
-      if (!Array.isArray(req.body.education)) return res.status("401").send("Education must be in array format");
-      if (!Array.isArray(req.body.experience)) return res.status("401").send("Experience must be in array format");
-      if (req.body.education.length==0) return res.status("401").send("Education array is empty");
-      if (req.body.experience.length==0) return res.status("401").send("Experience array is empty");
+      if (!Array.isArray(education)) return res.status("401").send("Education must be in array format");
+      // if (!Array.isArray(req.body.experience)) return res.status("401").send("Experience must be in array format");
+      // if (education.length===0) return res.status("401").send("Education array is empty");
+      // if (req.body.experience.length===0) return res.status("401").send("Experience array is empty");
 
       //proceed to add information pertaining to education and experience
 
     //Validate education from front end
-    for (var i = 0; i < req.body.education.length; i++) {
+    for (var i = 0; i < education.length; i++) {
 
       let educationData={
-        school: req.body.education[i].school,
-        degree: req.body.education[i].degree,
-        major: req.body.education[i].major,
-        gradMonthYear: req.body.education[i].gradMonthYear
+        school: education[i].school,
+        degree: education[i].degree,
+        major: education[i].major,
+        gradMonthYear: education[i].gradMonthYear
     }
 
       let {error}= validateEducation(educationData);
-      if (error) return res.status(404).send(error.details[0].message);
+      if (error) {
+        return res.status(422).json({
+          status: 422,
+          message: convertToForms(error)
+        });
+      }
 
       let education= new Education({
         user: req.user.id,
-        school: req.body.education[i].school,
-        degree: req.body.education[i].degree,
-        major: req.body.education[i].major,
-        gradMonthYear: req.body.education[i].gradMonthYear
+        school: education[i].school,
+        degree: education[i].degree,
+        major: education[i].major,
+        gradMonthYear: education[i].gradMonthYear
     })
 
       current_user.education.push(education);
@@ -178,7 +193,7 @@ router.post('/onboarding', auth, async(req,res)=>{
     //validate experience array
     for (var i = 0; i < req.body.experience.length; i++) {
 
-      experienceData={
+      let experienceData={
         position: req.body.experience[i].position,
         company: req.body.experience[i].company,
         city: req.body.experience[i].city,
@@ -219,7 +234,7 @@ router.post('/onboarding', auth, async(req,res)=>{
 
       for (var i = 0; i < req.body.honorsAwards.length; i++) {
 
-        honorAwardData={
+        let honorAwardData={
           title: req.body.honorsAwards[i].title,
           association: req.body.honorsAwards[i].association,
           issuer: req.body.honorsAwards[i].issuer,

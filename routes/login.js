@@ -13,7 +13,7 @@ router.post('/', async (req,res) =>{
 
     try{
     //validate the user object
-    userData={
+    let userData={
         email: req.body.email,
         password: req.body.password
     }
@@ -25,23 +25,28 @@ router.post('/', async (req,res) =>{
     //we can use the mongoose user model to find the user
     let user =await User.findOne({email:req.body.email});
     
-    if (!user) return res.status(404).send('Please provide the correct login information');
+    if (!user) return res.status(401).json({
+        message: 'Please provide the correct login information'
+    });
 
     if (!user.isActive) return res.status(404).send('Your account has not been verfified.');
     
     //Lets check if the password matches the encrypted password in the database
     const validPassword=await bcrypt.compare(req.body.password, user.password);
-    if (!validPassword) return res.status(404).send('Please provide correct login details');
+    if (!validPassword) return res.status(401).json({
+        message: 'Please provide correct login details'
+    });
 
     //lets create a json web token to identify users. this will be sent to the server
     const web_token=user.generateAuthToken();
     const userInfo = setUserInfo(user);
 
     //its also good practice to store the private key in an environment variable.
-        return res.status(200).json({
-            token: `Bearer ${web_token}`,
-            user: userInfo
-        });
+    return res.header('x-auth-token', web_token)
+      .status(200).json({
+        token: `Bearer ${web_token}`,
+        user: userInfo
+      });
 }
 
 catch(error){

@@ -7,6 +7,7 @@ const brands=require('./routes/brands');
 const blogs=require('./routes/blogs');
 var home=require('./routes/home');
 const path=require('path');
+const cors=require('cors');
 
 const notifications= require('./routes/notifications');
 const messages= require('./routes/messages');
@@ -17,10 +18,10 @@ const people=require('./routes/people');
 const jobs=require('./routes/jobs');
 const login=require('./routes/login');
 const verify= require('./routes/verify');
-const applications=require('./routes/applications');
+// const applications=require('./routes/applications');
 const admin=require('./routes/admin');
-const insights= require('./routes/insights');
-const status= require('./config/status');
+// const insights= require('./routes/insights');
+// const status= require('./config/status');
 
 
 const cron = require('node-cron');
