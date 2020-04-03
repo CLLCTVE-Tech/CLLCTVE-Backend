@@ -292,6 +292,9 @@ router.post('/onboarding', auth, async(req,res)=>{
     //set onboarding flag to true
     current_user.onboarded=true;
     await current_user.save();
+
+    result=lodash.pick(current_user, ['firstName','lastName', 'email', 
+    'education', 'experience', 'certifications', 'honorsAwards'])
     
       return res.status(200).send({
         message: "Successfully completed Onboarding status",
