@@ -12,6 +12,8 @@ const bcrypt =require('bcryptjs');
 const auth=require("../middleware/auth");
 const admin = require('../middleware/admin');
 const Joi=require('joi');
+const joiToForms = require('joi-errors-for-forms').form;
+const convertToForms = joiToForms();
 const {Token}=require('../models/tokens');
 const crypto= require('crypto');
 const nodemailer = require('nodemailer');
@@ -36,7 +38,14 @@ router.post('/signup', async (req,res) =>{
         gradMonthYear: req.body.gradMonthYear
     }
     let {error}= validateUser(userData);
-    if (error) return res.status(401).send(error.details[0].message);
+    if (error) {
+      console.log('validateUser, convertToForms(error): ', convertToForms(error));
+      return res.status(422).json({
+        status: 422,
+        message: convertToForms(error)
+      });
+    }
+
 
     //check if email is an edu email for now.
     if (!req.body.email.endsWith(".edu"))
@@ -156,21 +165,20 @@ router.post('/onboarding', auth, async(req,res)=>{
         school: req.body.education[i].school,
         degree: req.body.education[i].degree,
         major: req.body.education[i].major,
-        gradYear: req.body.education[i].gradYear,
-        gradMonth: req.body.education[i].gradMonth 
+        from: req.body.education[i].from,
+        to: req.body.education[i].to
     }
 
       let {error}= validateEducation(educationData);
-      if (error) return res.status(404).send(error.details[0].message);
-
-      let education= new Education({
-        user: req.user.id,
-        school: req.body.education[i].school,
-        degree: req.body.education[i].degree,
-        major: req.body.education[i].major,
-        gradYear: req.body.education[i].gradYear,
-        gradMonth: req.body.education[i].gradMonth 
-    })
+      if (error) {
+        console.log('validateEducation, convertToForms(error): ', convertToForms(error));
+        return res.status(422).json({
+          status: 422,
+          message: convertToForms(error)
+        });
+      }
+      educationData["user"]=req.user.id;
+      let education= new Education(educationData);
 
       current_user.education.push(education);
       await education.save();
@@ -180,32 +188,26 @@ router.post('/onboarding', auth, async(req,res)=>{
     for (var i = 0; i < req.body.experience.length; i++) {
 
       experienceData={
-        position: req.body.experience[i].position,
+        title: req.body.experience[i].title,
         company: req.body.experience[i].company,
-        city: req.body.experience[i].city,
-        state: req.body.experience[i].state,
         from: req.body.experience[i].from,
         to: req.body.experience[i].to,
-        links: req.body.experience[i].links,
         description: req.body.experience[i]. description
     }
     //check for errors
 
     let {error}= validateExperience(experienceData);
-    if (error) return res.status(401).send(error.details[0].message);
+    if (error) {
+      console.log('validateExperience, convertToForms(error): ', convertToForms(error));
+      return res.status(422).json({
+        status: 422,
+        message: convertToForms(error)
+      });
+    }
 
     //if there arrent any errors create new education object
-    let experience= new Experience({
-        user: req.user.id,
-        position: req.body.experience[i].position,
-        company: req.body.experience[i].company,
-        city: req.body.experience[i].city,
-        state: req.body.experience[i].state,
-        from: req.body.experience[i].from,
-        to: req.body.experience[i].to,
-        links: req.body.experience[i].links,
-        description: req.body.experience[i]. description
-    })
+    experienceData["user"]=req.user.id;
+    let experience= new Experience(experienceData);
 
     current_user.experience.push(experience);
     await experience.save();
@@ -224,28 +226,24 @@ router.post('/onboarding', auth, async(req,res)=>{
           title: req.body.honorsAwards[i].title,
           association: req.body.honorsAwards[i].association,
           issuer: req.body.honorsAwards[i].issuer,
-          month: req.body.honorsAwards[i].month,
-          year: req.body.honorsAwards[i].year,
+          from: req.body.honorsAwards[i].from,
           links: req.body.honorsAwards[i].links,
           description: req.body.honorsAwards[i].description
       }
   
       //check for errors
       let {error}= validateHonorsAwards(honorAwardData);
-      if (error) return res.status(401).send(error.details[0].message);
+      if (error) {
+        console.log('validateHonorsAwards, convertToForms(error): ', convertToForms(error));
+        return res.status(422).json({
+          status: 422,
+          message: convertToForms(error)
+        });
+      }
   
       //if there arrent any errors create new honors object
-      const honorAward= new HonorAward({
-          user: req.user.id,
-          title: req.body.honorsAwards[i].title,
-          association: req.body.honorsAwards[i].association,
-          issuer: req.body.honorsAwards[i].issuer,
-          month: req.body.honorsAwards[i].month,
-          year: req.body.honorsAwards[i].year,
-          links: req.body.honorsAwards[i].links,
-          description: req.body.honorsAwards[i].description
-          
-      })
+      honorAwardData["user"]=req.user.id;
+      const honorAward= new HonorAward(honorAwardData);
   
       current_user.honorsAwards.push(honorAward);
       await honorAward.save();
@@ -262,10 +260,8 @@ router.post('/onboarding', auth, async(req,res)=>{
 
           title: req.body.certifications[i].title,
           organization: req.body.certifications[i].organization,
-          issuedMonth: req.body.certifications[i].issuedMonth,
-          issuedYear: req.body.certifications[i].issuedYear,
-          expMonth: req.body.certifications[i].expMonth ,
-          expYear:req.body.certifications[i].expYear,
+          from: req.body.certifications[i].from,
+          to: req.body.certifications[i].to,
           certificationID: req.body.certifications[i].certificationID,
           links: req.body.certifications[i].links,
           description: req.body.certifications[i].description
@@ -273,21 +269,17 @@ router.post('/onboarding', auth, async(req,res)=>{
   
       //check for errors
       let {error}= validateCertification(certificationData);
-      if (error) return res.status(401).send(error.details[0].message);
+      if (error) {
+        console.log('validateCertification, convertToForms(error): ', convertToForms(error));
+        return res.status(422).json({
+          status: 422,
+          message: convertToForms(error)
+        });
+      }
   
       //if there arrent any errors create new honors object
-      const certification= new Certification({
-          user: req.user.id,
-          title: req.body.certifications[i].title,
-          organization: req.body.certifications[i].organization,
-          issuedMonth: req.body.certifications[i].issuedMonth,
-          issuedYear: req.body.certifications[i].issuedYear,
-          expMonth: req.body.certifications[i].expMonth ,
-          expYear:req.body.certifications[i].expYear,
-          certificationID: req.body.certifications[i].certificationID,
-          links: req.body.certifications[i].links,
-          description: req.body.certifications[i].description
-      });
+      certificationData["user"]=req.user.id;
+      const certification= new Certification(certificationData);
   
       current_user.certifications.push(certification);
       await certification.save();
@@ -302,7 +294,7 @@ router.post('/onboarding', auth, async(req,res)=>{
     await current_user.save();
     
       return res.status(200).send({
-        message: "Successfully completed Onboarding stats",
+        message: "Successfully completed Onboarding status",
         user: current_user});
 } 
 catch(error){

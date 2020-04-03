@@ -5,6 +5,8 @@ const lodash=require('lodash');
 const router=express.Router();
 const bcrypt =require('bcryptjs');
 const config= require('config');
+const joiToForms = require('joi-errors-for-forms').form;
+const convertToForms = joiToForms();
 const {Token}= require('../models/tokens');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -28,8 +30,13 @@ router.post('/signup', async (req,res) =>{
         phone: req.body.phone
     }
     var {error}= validateBrand(userData);
-    if (error) return res.status(401).send(error.details[0].message);
-
+    if (error) {
+      console.log('validateBrand, convertToForms(error): ', convertToForms(error));
+      return res.status(422).json({
+        status: 422,
+        message: convertToForms(error)
+      });
+    }
 
     var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
     if(!regularExpression.test(req.body.password)) 

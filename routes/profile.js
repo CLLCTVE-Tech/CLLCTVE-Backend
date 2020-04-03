@@ -7,6 +7,8 @@ var express = require('express'),
     var StreamMongoose = stream_node.mongoose;
     var StreamBackend = new StreamMongoose.Backend();
     const logger=require('../config/logger');
+    const joiToForms = require('joi-errors-for-forms').form;
+    const convertToForms = joiToForms();
 
     var enrichActivities = function(body) {
         var activities = body.results;
@@ -72,22 +74,46 @@ router.put('/edit/basic', auth, async(req,res)=>{
     
     if(req.body.hasOwnProperty('firstName')){
         let {error}= Joi.validate({firstName: req.body.firstName}, {firstName: Joi.string().min(5).max(50)});
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateFirstName, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
     };
 
     if(req.body.hasOwnProperty('lastName')){
         let {error}= Joi.validate({lastName: req.body.lastName}, {lastName: Joi.string().min(5).max(50)});
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateLastName, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
     };
 
     if(req.body.hasOwnProperty('email')){
         const {error}= Joi.validate({email:req.body.email}, {email: Joi.string().min(8).max(255).email()} );
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateEmail, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
     };
 
     if(req.body.hasOwnProperty('username')){
         const {error}= Joi.validate({username:req.body.username}, {username: Joi.string().min(5).max(50)});
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateUsername, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
     };
 
     await current_user.update(req.body);
@@ -178,7 +204,13 @@ router.post('/edit/skills', auth, async(req,res)=>{
 
         for(i=0; i < skills.length; i++){
             let {error} =validateSkill(skills[i]);
-            if (error) return res.status(401).send(error.details[0].message);
+            if (error) {
+                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
+                return res.status(422).json({
+                  status: 422,
+                  message: convertToForms(error)
+                });
+              }
 
             //check if skill is in users list of skills before adding
             let found = current_user.skills.find(element => element == skills[i]);
@@ -214,7 +246,13 @@ router.put('/edit/skills', auth, async(req,res)=>{
 
         for(i=0; i < skills.length; i++){
             let {error} =validateSkill(skills[i]);
-            if (error) return res.status(401).send(error.details[0].message);
+            if (error) {
+                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
+                return res.status(422).json({
+                  status: 422,
+                  message: convertToForms(error)
+                });
+              }
 
             //check if skill is in users list of skills before adding
             let found = current_user.skills.find(element => element == skills[i]);
@@ -250,7 +288,13 @@ router.delete('/edit/skills', auth, async(req,res)=>{
 
         for(i=0; i < skills.length; i++){
             let {error} =validateSkill(skills[i]);
-            if (error) return res.status(401).send(error.details[0].message);
+            if (error) {
+                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
+                return res.status(422).json({
+                  status: 422,
+                  message: convertToForms(error)
+                });
+              }
 
             //check if skill is in users list of skills in order to delete
             let found = current_user.skills.find(element => element == skills[i]);
@@ -282,27 +326,27 @@ router.post('/edit/education', auth, async(req,res)=>{
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        educationData={
+        var educationData={
             school: req.body.school,
             degree: req.body.degree,
             major: req.body.major,
-            gradYear: req.body.gradYear,
-            gradMonth: req.body.gradMonth 
-        }
+            from: req.body.from,
+            to: req.body.to
+        };
 
         //check for errors
         let {error}= validateEducation(educationData);
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateEducation, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
 
         //if there arrent any errors create new education object
-        const education= new Education({
-            user: req.user.id,
-            school: req.body.school,
-            degree: req.body.degree,
-            major: req.body.major,
-            gradYear: req.body.gradYear,
-            gradMonth: req.body.gradMonth 
-        })
+        educationData["user"]=req.user.id;
+        const education= new Education(educationData);
     
         current_user.education.push(education);
         await education.save();
@@ -366,33 +410,27 @@ try{
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        experienceData={
-            position: req.body.position,
+        var experienceData={
+            title: req.body.title,
             company: req.body.company,
-            city: req.body.city,
-            state: req.body.state,
             from: req.body.from,
             to: req.body.to,
-            links: req.body.links,
             description: req.body.description
-        }
+        };
         //check for errors
 
         let {error}= validateExperience(experienceData);
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateExperience, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
 
         //if there arrent any errors create new education object
-        const experience= new Experience({
-            user: req.user.id,
-            position: req.body.position,
-            company: req.body.company,
-            city: req.body.city,
-            state: req.body.state,
-            from: req.body.from,
-            to: req.body.to,
-            links: req.body.links,
-            description: req.body.description
-        })
+        experienceData["user"]=req.user.id;
+        const experience= new Experience(experienceData);
     
         current_user.experience.push(experience);
         await experience.save();
@@ -438,9 +476,6 @@ try{
 
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
     if (!current_user) return res.status(404).send("The user does not exist");
-
-
-
     return res.status(200).send(current_user);
 } 
 catch(error){
@@ -460,31 +495,28 @@ try{
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
     if (!current_user) return res.status(404).send("The user does not exist");
 
-    honorAwardData={
+    var honorAwardData={
         title: req.body.title,
         association: req.body.association,
         issuer: req.body.issuer,
-        month: req.body.month,
-        year: req.body.year,
+        from: req.body.from,
         links: req.body.links,
         description: req.body.description
-    }
+    };
 
     //check for errors
     let {error}= validateHonorsAwards(honorAwardData);
-    if (error) return res.status(401).send(error.details[0].message);
+    if (error) {
+        console.log('validateHonorsAwards, convertToForms(error): ', convertToForms(error));
+        return res.status(422).json({
+          status: 422,
+          message: convertToForms(error)
+        });
+      }
 
     //if there arrent any errors create new honors object
-    const honorAward= new HonorAward({
-        user: req.user.id,
-        title: req.body.title,
-        association: req.body.association,
-        issuer: req.body.issuer,
-        month: req.body.month,
-        year: req.body.year,
-        links: req.body.links,
-        description: req.body.description
-    })
+    honorAwardData["user"]=req.user.id;
+    const honorAward= new HonorAward(honorAwardData);
 
     current_user.honorsAwards.push(honorAward);
     await honorAward.save();
@@ -548,36 +580,29 @@ router.post('/edit/certifications', auth, async(req,res)=>{
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        certificationData={
-
-            title: req.body.title,
-            organization: req.body.organization,
-            issuedMonth: req.body.issuedMonth,
-            issuedYear: req.body.issuedYear,
-            expMonth: req.body.expMonth ,
-            expYear:req.body.expYear,
-            certificationID: req.body.certificationID,
-            links: req.body.links,
-            description: req.body.description
+        var certificationData={
+          title: req.body.title,
+          organization: req.body.organization,
+          from: req.body.from,
+          to: req.body.to,
+          certificationID: req.body.certificationID,
+          links: req.body.links,
+          description: req.body.description
         }
     
         //check for errors
         let {error}= validateCertification(certificationData);
-        if (error) return res.status(401).send(error.details[0].message);
+        if (error) {
+            console.log('validateCertification, convertToForms(error): ', convertToForms(error));
+            return res.status(422).json({
+              status: 422,
+              message: convertToForms(error)
+            });
+          }
     
         //if there arrent any errors create new honors object
-        const certification= new Certification({
-            user: req.user.id,
-            title: req.body.title,
-            organization: req.body.organization,
-            issuedMonth: req.body.issuedMonth,
-            issuedYear: req.body.issuedYear,
-            expMonth: req.body.expMonth ,
-            expYear:req.body.expYear,
-            certificationID: req.body.certificationID,
-            links: req.body.links,
-            description: req.body.description
-        });
+        certificationData["user"]=req.user.id;
+        const certification= new Certification(certificationData);
     
         current_user.certifications.push(certification);
         await certification.save();
