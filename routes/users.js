@@ -20,6 +20,7 @@ const config = require('config');
 const joiToForms = require('joi-errors-for-forms').form;
 const convertToForms = joiToForms();
 const setUserInfo = require('../lib/helpers').setUserInfo;
+const isArray = require('../lib/helpers').isArray;
 
 //Lets set up a router for our users page
 
@@ -161,152 +162,35 @@ router.post('/onboarding', auth, async(req,res)=>{
       //proceed to add information pertaining to education and experience
 
     //Validate education from front end
-    for (var i = 0; i < education.length; i++) {
-
-      let educationData={
-        school: education[i].school,
-        degree: education[i].degree,
-        major: education[i].major,
-        gradMonthYear: education[i].gradMonthYear
-    }
-
-      let {error}= validateEducation(educationData);
+    let errors = {};
+    
+    education.forEach((_education, index) => {
+      console.log('education loop, _education # %d, _education item: %s', index, _education);
+  
+      let {error}= validateEducation(_education);
       if (error) {
-        return res.status(422).json({
-          status: 422,
-          message: convertToForms(error)
-        });
+        if (errors['education'] && isArray(errors['education'])) {
+          errors.education.push({
+            index,
+            "errors": convertToForms(error)
+          })
+        } else {
+          errors.education = [];
+          errors.education.push({
+            index,
+            "errors": convertToForms(error)
+          })
+        }
       }
-
-      let education= new Education({
-        user: req.user.id,
-        school: education[i].school,
-        degree: education[i].degree,
-        major: education[i].major,
-        gradMonthYear: education[i].gradMonthYear
-    })
-
-      current_user.education.push(education);
-      await education.save();
-    }
-
-    //validate experience array
-    for (var i = 0; i < req.body.experience.length; i++) {
-
-      let experienceData={
-        position: req.body.experience[i].position,
-        company: req.body.experience[i].company,
-        city: req.body.experience[i].city,
-        state: req.body.experience[i].state,
-        from: req.body.experience[i].from,
-        to: req.body.experience[i].to,
-        links: req.body.experience[i].links,
-        description: req.body.experience[i]. description
-    }
-    //check for errors
-
-    let {error}= validateExperience(experienceData);
-    if (error) return res.status(401).send(error.details[0].message);
-
-    //if there arrent any errors create new education object
-    let experience= new Experience({
-        user: req.user.id,
-        position: req.body.experience[i].position,
-        company: req.body.experience[i].company,
-        city: req.body.experience[i].city,
-        state: req.body.experience[i].state,
-        from: req.body.experience[i].from,
-        to: req.body.experience[i].to,
-        links: req.body.experience[i].links,
-        description: req.body.experience[i]. description
-    })
-
-    current_user.experience.push(experience);
-    await experience.save();
-
-    }
-
-
-    //check if there's data in honor/awards array and certifications array
-    //if data is present, add to user array
-
-    if( req.body.hasOwnProperty('honorsAwards') &&  req.body.honorsAwards.length >0){
-
-      for (var i = 0; i < req.body.honorsAwards.length; i++) {
-
-        let honorAwardData={
-          title: req.body.honorsAwards[i].title,
-          association: req.body.honorsAwards[i].association,
-          issuer: req.body.honorsAwards[i].issuer,
-          month: req.body.honorsAwards[i].month,
-          year: req.body.honorsAwards[i].year,
-          links: req.body.honorsAwards[i].links,
-          description: req.body.honorsAwards[i].description
-      }
-  
-      //check for errors
-      let {error}= validateHonorsAwards(honorAwardData);
-      if (error) return res.status(401).send(error.details[0].message);
-  
-      //if there arrent any errors create new honors object
-      const honorAward= new HonorAward({
-          user: req.user.id,
-          title: req.body.honorsAwards[i].title,
-          association: req.body.honorsAwards[i].association,
-          issuer: req.body.honorsAwards[i].issuer,
-          month: req.body.honorsAwards[i].month,
-          year: req.body.honorsAwards[i].year,
-          links: req.body.honorsAwards[i].links,
-          description: req.body.honorsAwards[i].description
-          
-      })
-  
-      current_user.honorsAwards.push(honorAward);
-      await honorAward.save();
-      }
-
-    }
-
-
-    if( req.body.hasOwnProperty('certifications') &&  req.body.certifications.length >0){
-
-      for (var i = 0; i < req.body.certifications.length; i++) {
-
-        let certificationData={
-
-          title: req.body.certifications[i].title,
-          organization: req.body.certifications[i].organization,
-          issuedMonthYear: req.body.certifications[i].issuedMonthYear,
-          expMonthYear: req.body.certifications[i].expMonthYear ,
-          certificationID: req.body.certifications[i].certificationID,
-          links: req.body.certifications[i].links,
-          description: req.body.certifications[i].description
-      }
-  
-      //check for errors
-      let {error}= validateCertification(certificationData);
-      if (error) return res.status(401).send(error.details[0].message);
-  
-      //if there arrent any errors create new honors object
-      const certification= new Certification({
-          user: req.user.id,
-          title: req.body.certifications[i].title,
-          organization: req.body.certifications[i].organization,
-          issuedMonthYear: req.body.certifications[i].issuedMonthYear,
-          expMonthYear: req.body.certifications[i].expMonthYear,
-          certificationID: req.body.certifications[i].certificationID,
-          links: req.body.certifications[i].links,
-          description: req.body.certifications[i].description
+    });
+    
+    if (errors) {
+      return res.status(422).json({
+        status: 422,
+        message: errors
       });
-  
-      current_user.certifications.push(certification);
-      await certification.save();
-
-      }
-
     }
-
-
+    
     //set onboarding flag to true
     current_user.onboarded=true;
     await current_user.save();

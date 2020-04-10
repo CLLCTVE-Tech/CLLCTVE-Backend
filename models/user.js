@@ -3,8 +3,6 @@ const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
 
-
-
 //Create User Schema before feeding it into the Model object
 
 const userSchema=new Mongoose.Schema({
@@ -45,7 +43,9 @@ const userSchema=new Mongoose.Schema({
         maxlength: 10,
     },
 
-    //This is how we diffrentiate creatives from brands
+    gradMonthYear: {type: String, required: false},
+
+    //This is how we differentiate creatives from brands
     isBrand: {type: Boolean, required: true, default: false},
 
     following: {type: Number, default:0,},
@@ -62,12 +62,7 @@ const userSchema=new Mongoose.Schema({
         maxlength: 1024
     },
 
-    dreamJob: {
-        type: String,
-        required: false,
-        minlength: 8,
-        maxlength: 50
-    },
+    dreamJobs: {type:Array, default: []},
 
     about:{
         type: String,
@@ -76,14 +71,10 @@ const userSchema=new Mongoose.Schema({
         maxlength: 500
     },
 
-    portfolio: {type:Array, default: []},
-
-    achievements:{type:Array, default: []},
-
     //we can use this for role based authorization
     isAdmin: {type:Boolean, default: false},
     isContributor: {type:Boolean, default: false},
-    blogPosts: {type:Array, default: []},
+    
     isVerified: {type:Boolean, default: false},
     skills: {type:Array, default: []},
     isActive: {type: Boolean, default: false},
@@ -100,9 +91,10 @@ const userSchema=new Mongoose.Schema({
     education:[{
         school: String,
         major: String,
-        from: String,
-        to: String,
-        currentlyAttedning: Boolean
+        degreeType: String,
+        startMonthYear: String,
+        endMonthYear: String,
+        isEnrolled: Boolean,
     }],
 
     //this will determine membership
@@ -111,8 +103,10 @@ const userSchema=new Mongoose.Schema({
     socialMediaHandles: {
         type: Map,
         of: String
-      }
+      },
 
+    joined: {type: Date, default: Date.now},
+    onboarded: {type: Boolean, default: false}
 });
 
 //We have generated webtokens for each user in different files (auth and users), however,
