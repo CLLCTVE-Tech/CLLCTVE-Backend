@@ -1,4 +1,4 @@
-const {User, validateBrand, validateUserName}= require('../models/user');
+const {Brand, validateBrand, validateUserName}= require('../models/user');
 const mongoose =require('mongoose');
 const express= require('express');
 const lodash=require('lodash');
@@ -39,17 +39,21 @@ router.post('/signup', async (req,res) =>{
     }
 
     var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
-    if(!regularExpression.test(req.body.password)) 
-    return res.status(401).send("password should contain at least one number and one special character");
+    if(!regularExpression.test(req.body.password)){
+      return res.status(422).json({
+        status: 422,
+        message: {password: "\"password\" should contain at least one number and one special character"}
+      });
+    } 
 
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
-    let user = await User.findOne({email:req.body.email});
-    if (user) return res.status(401).send('User is already in database.');
+    let user = await Brand.findOne({email:req.body.email});
+    if (user) return res.status(401).send('Brand is already in database.');
 
     
     //create new user object if validation tests have been passed
-    user=new User({
+    user=new Brand({
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
@@ -63,8 +67,6 @@ router.post('/signup', async (req,res) =>{
 
     //set isBrand to true as brands have to register through this route.
     //We will send an email to admin to verify brands later.
-
-    user.isBrand=true;
 
     //save new user object 
     await user.save();

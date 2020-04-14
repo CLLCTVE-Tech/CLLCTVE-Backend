@@ -1,6 +1,6 @@
 var express = require('express'),
     models = require('../models/tweet'),
-    {User}=require('../models/user'),
+    {BaseUser}=require('../models/user'),
     auth= require('../middleware/auth'),
 	_ = require('underscore'),
 	async = require('async'),
@@ -62,7 +62,7 @@ const logger= require('../config/logger');
     router.use(auth,function(req, res, next) {
         //use for authenticated users
         if (!req.user.id) {
-            User.findOne({ username: req.user.username })
+            BaseUser.findOne({ username: req.user.username })
                 .lean()
                 .exec(function(err, user) {
                     if (err) return next(err);
@@ -174,14 +174,14 @@ router.get('/account', auth, function(req, res) {
 
         try{
 
-        User.findOne({ _id: req.body.target }, function(err, target) {
+        BaseUser.findOne({ _id: req.body.target }, function(err, target) {
             if (target) {
                 var followData = { user: req.user.id, target: req.body.target };
                 var follow = new Follow(followData);
                 follow.save(async function(err) {
                     if (err) next(err);
-                    await User.findOneAndUpdate({_id :req.user.id}, {$inc : { following: 1 }});
-                    await User.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: 1 }});
+                    await BaseUser.findOneAndUpdate({_id :req.user.id}, {$inc : { following: 1 }});
+                    await BaseUser.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: 1 }});
                     
                     return res.status(200).send({ follow: { id: req.body.target } });
                 });
@@ -211,8 +211,8 @@ router.get('/account', auth, function(req, res) {
             if (follow) {
                 follow.remove(async function(err) {
                     if (err) next(err);
-                    await User.findOneAndUpdate({_id :req.user.id}, {$inc : { following: -1 }});
-                    await User.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: -1 }});
+                    await BaseUser.findOneAndUpdate({_id :req.user.id}, {$inc : { following: -1 }});
+                    await BaseUser.findOneAndUpdate({_id :req.body.target}, {$inc : { followers: -1 }});
                     
                     return res.status(200).send({ follow: { id: req.body.target } });
                 });
@@ -252,7 +252,7 @@ router.get('/account', auth, function(req, res) {
             
             for (i=0; i< values.mentions.length; i++) {
 
-                var target=await User.findOne({username: values.mentions[i].substr(1)})
+                var target=await BaseUser.findOne({username: values.mentions[i].substr(1)})
                 if (!target) return res.status(404).send("The user you mentioned does not exist!")
 
                 mentionData= {user: req.user.id, target: target._id, tweet: newTweet._id};
@@ -274,7 +274,7 @@ router.get('/account', auth, function(req, res) {
 
         newTweet.save(async function(err) {
             if (err) next(err);
-                await User.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: 1 }});
+                await BaseUser.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: 1 }});
                 return res.status(200).send({ tweet: req.body.tweet });
                 });
 
@@ -329,7 +329,7 @@ router.get('/account', auth, function(req, res) {
             Tweet.findOne(tweetData, async function(err, foundTweet) {
                 if (foundTweet) {
                     foundTweet.remove();
-                    await User.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: -1 }});
+                    await BaseUser.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: -1 }});
                 }
             });
         
@@ -416,7 +416,7 @@ router.get('/account', auth, function(req, res) {
 
         tweet.save(async function(err) {
             if (err) next(err);
-                await User.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: 1 }});
+                await BaseUser.findOneAndUpdate({_id :req.user.id}, {$inc : { tweetCount: 1 }});
                 });
 
         var parentTweet= await Tweet.findOne({_id: req.body.tweetId});

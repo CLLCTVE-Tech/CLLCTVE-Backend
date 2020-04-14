@@ -1,5 +1,5 @@
 var express = require('express'),
-    {User}=require('../models/brand'),
+    {User}=require('../models/user'),
     auth= require('../middleware/auth');
     
 var router = express.Router();

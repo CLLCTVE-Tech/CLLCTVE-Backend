@@ -1,6 +1,5 @@
 const {User, Education, Experience, Certification, HonorAward,
-  validateUser, validateUserName, validateDreamJob, 
-    validateSkill, validateEducation, validateExperience,
+  validateUser, validateSkill, validateEducation, validateExperience,
     validateCertification, validateHonorsAwards}= require('../models/user');
 
 const mongoose =require('mongoose');
@@ -54,8 +53,12 @@ router.post('/signup', async (req,res) =>{
     //check if password is complex enough:
     //var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
     var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
-    if(!regularExpression.test(req.body.password)) 
-    return res.status(401).send("password should contain at least one number and one special character");
+    if(!regularExpression.test(req.body.password)){
+      return res.status(422).json({
+        status: 422,
+        message: {password: "\"password\" should contain at least one number and one special character"}
+      });
+    }
     
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
@@ -140,165 +143,241 @@ router.post('/onboarding', auth, async(req,res)=>{
 
   try{
 
-      const current_user=await User.findOne({_id:req.user.id}).select("-password");
-      if (!current_user) return res.status(404).send("The User was not found. ");
+    const current_user=await User.findOne({_id:req.user.id}).select("-password");
+    if (!current_user) return res.status(404).send("The User was not found. ");
 
-      //check if req has at least education and experience information, if not,
-      //an error will occur.
+    //check if req has at least education and experience information, if not,
+    //an error will occur.
 
-      if (!req.body.hasOwnProperty("education")) return res.status(401).send("Education is required in the onboarding process");
-      if (!req.body.hasOwnProperty("experience")) return res.status(401).send("Experience is required in the onboarding process");
+    if (!req.body.hasOwnProperty("education")) return res.status(401).send("Education is required in the onboarding process");
+     
+    //check if education is an are arrays
+    if (!Array.isArray(req.body.education)) return res.status("401").send("Education must be in array format");
+    if (req.body.education.length==0) return res.status("401").send("Education array is empty");
+      
+    //proceed to add information pertaining to education and other information
+    //object to store all errors
+    let errors = {};
 
-      //check if education and experience are arrays
+    //object to store all information
+    let information={};
 
-      if (!Array.isArray(req.body.education)) return res.status("401").send("Education must be in array format");
-      if (!Array.isArray(req.body.experience)) return res.status("401").send("Experience must be in array format");
-      if (req.body.education.length==0) return res.status("401").send("Education array is empty");
-      if (req.body.experience.length==0) return res.status("401").send("Experience array is empty");
+    //array to store skills in after validation
+    let validSkills=[];
 
-      //proceed to add information pertaining to education and experience
+    //Validate all data from front end
+    const education=req.body.education;
 
-    //Validate education from front end
-    for (var i = 0; i < req.body.education.length; i++) {
+    education.forEach(async (_education, index) => {
+      console.log('education loop, _education # %d, _education item: %s', index, _education);
+  
+      let {error}= validateEducation(_education);
+      //check if there is an error
 
-      educationData={
-        school: req.body.education[i].school,
-        degree: req.body.education[i].degree,
-        major: req.body.education[i].major,
-        from: req.body.education[i].from,
-        to: req.body.education[i].to
-    }
-
-      let {error}= validateEducation(educationData);
       if (error) {
-        console.log('validateEducation, convertToForms(error): ', convertToForms(error));
-        return res.status(422).json({
-          status: 422,
-          message: convertToForms(error)
-        });
+        if (errors['education'] && Array.isArray(errors['education'])) {
+             errors.education.push({index, "errors": convertToForms(error)})} 
+        else {
+          errors.education = [];
+          errors.education.push({index, "errors": convertToForms(error)})
+        }
       }
-      educationData["user"]=req.user.id;
-      let education= new Education(educationData);
 
-      current_user.education.push(education);
-      await education.save();
+      //if there isn't any error, take the data we are interested in
+      _education["user"]=req.user.id;
+
+      if (information['education'] && Array.isArray(information['education']['data'])) {
+        information.education.data.push(_education)} 
+      else {
+        information.education = {
+          schema: Education, 
+          target: current_user.education,
+          data:[]
+        };
+
+        information.education.data.push(_education);
+      }
+    });
+
+
+    if( req.body.hasOwnProperty('experience') &&  req.body.experience.length >0){
+
+    const experience= req.body.experience;
+
+    experience.forEach(async (_experience, index) => {
+      console.log('experience loop, _experience # %d, _experience item: %s', index, _experience);
+  
+      let {error}= validateExperience(_experience);
+      //check if there is an error
+
+      if (error) {
+        if (errors['experience'] && Array.isArray(errors['experience'])) {
+             errors.experience.push({index, "errors": convertToForms(error)})} 
+        else {
+          errors.experience = [];
+          errors.experience.push({index, "errors": convertToForms(error)})
+        }
+      }
+    
+    //if there isn't any error, take the data we are interested in
+    _experience["user"]=req.user.id;
+
+    if (information['experience'] && Array.isArray(information['experience']['data'])) {
+      information.experience.data.push(_experience)} 
+    else {
+      information.experience = {
+        schema: Experience, 
+        target: current_user.experience,
+        data:[]
+      }
+      information.experience.data.push(_experience);
     }
 
-    //validate experience array
-    for (var i = 0; i < req.body.experience.length; i++) {
+    });
 
-      experienceData={
-        title: req.body.experience[i].title,
-        company: req.body.experience[i].company,
-        from: req.body.experience[i].from,
-        to: req.body.experience[i].to,
-        description: req.body.experience[i]. description
-    }
-    //check for errors
-
-    let {error}= validateExperience(experienceData);
-    if (error) {
-      console.log('validateExperience, convertToForms(error): ', convertToForms(error));
-      return res.status(422).json({
-        status: 422,
-        message: convertToForms(error)
-      });
-    }
-
-    //if there arrent any errors create new education object
-    experienceData["user"]=req.user.id;
-    let experience= new Experience(experienceData);
-
-    current_user.experience.push(experience);
-    await experience.save();
-
-    }
-
+  };
 
     //check if there's data in honor/awards array and certifications array
     //if data is present, add to user array
 
     if( req.body.hasOwnProperty('honorsAwards') &&  req.body.honorsAwards.length >0){
 
-      for (var i = 0; i < req.body.honorsAwards.length; i++) {
+    const honorsAward= req.body.honorsAwards;
 
-        honorAwardData={
-          title: req.body.honorsAwards[i].title,
-          association: req.body.honorsAwards[i].association,
-          issuer: req.body.honorsAwards[i].issuer,
-          from: req.body.honorsAwards[i].from,
-          links: req.body.honorsAwards[i].links,
-          description: req.body.honorsAwards[i].description
-      }
+    honorsAward.forEach(async (_honorsAward, index) => {
+      console.log('honor awards loop, honor award # %d, _honorsAward item: %s', index, _honorsAward);
   
-      //check for errors
-      let {error}= validateHonorsAwards(honorAwardData);
+      let {error}= validateHonorsAwards(_honorsAward);
+      //check if there is an error
+
       if (error) {
-        console.log('validateHonorsAwards, convertToForms(error): ', convertToForms(error));
-        return res.status(422).json({
-          status: 422,
-          message: convertToForms(error)
-        });
+        if (errors['honorsAward'] && Array.isArray(errors['honorsAward'])) {
+             errors.honorsAward.push({index, "errors": convertToForms(error)})} 
+        else {
+          errors.honorsAward = [];
+          errors.honorsAward.push({index, "errors": convertToForms(error)})
+        }
       }
-  
-      //if there arrent any errors create new honors object
-      honorAwardData["user"]=req.user.id;
-      const honorAward= new HonorAward(honorAwardData);
-  
-      current_user.honorsAwards.push(honorAward);
-      await honorAward.save();
-      }
+    
+    //if there isn't any error, take the data we are interested in
+    _honorsAward["user"]=req.user.id;
 
+    if (information['honorsAward'] && Array.isArray(information['honorsAward']['data'])) {
+      information.honorsAward.data.push(_honorsAward) } 
+    else {
+      information.honorsAward = {
+        schema: HonorAward, 
+        target: current_user.honorsAwards,
+        data:[]
+      };
+
+      information.honorsAward.data.push(_honorsAward);
     }
+    });
+     
+  };
 
 
     if( req.body.hasOwnProperty('certifications') &&  req.body.certifications.length >0){
 
-      for (var i = 0; i < req.body.certifications.length; i++) {
+    const certifications= req.body.certifications;
 
-        certificationData={
-
-          title: req.body.certifications[i].title,
-          organization: req.body.certifications[i].organization,
-          from: req.body.certifications[i].from,
-          to: req.body.certifications[i].to,
-          certificationID: req.body.certifications[i].certificationID,
-          links: req.body.certifications[i].links,
-          description: req.body.certifications[i].description
-      }
+    certifications.forEach(async (_certification, index) => {
+      console.log('certification loop, certification # %d, _certification item: %s', index, _certification);
   
-      //check for errors
-      let {error}= validateCertification(certificationData);
+      let {error}= validateCertification(_certification);
+      //check if there is an error
+
       if (error) {
-        console.log('validateCertification, convertToForms(error): ', convertToForms(error));
-        return res.status(422).json({
-          status: 422,
-          message: convertToForms(error)
-        });
+        if (errors['certification'] && Array.isArray(errors['certification'])) {
+             errors.certification.push({index, "errors": convertToForms(error)})} 
+        else {
+          errors.certification = [];
+          errors.certification.push({index, "errors": convertToForms(error)})
+        }
       }
-  
-      //if there arrent any errors create new honors object
-      certificationData["user"]=req.user.id;
-      const certification= new Certification(certificationData);
-  
-      current_user.certifications.push(certification);
-      await certification.save();
+    
+    //if there isn't any error, take the data we are interested in
+    _certification["user"]=req.user.id;
 
-      }
+    if (information['certification'] && Array.isArray(information['certification']['data'])) {
+      information.certification.data.push(_certification)} 
+    else {
+      information.certification = {
+        schema: Certification, 
+        target: current_user.certifications,
+        data:[]
+      };
 
+      information.certification.data.push(_certification);
     }
+    });
 
+
+  };
+
+
+  //if there are skills present, validate them
+  if( req.body.hasOwnProperty('skills') &&  req.body.skills.length >0){
+    const skills=req.body.skills;
+
+    skills.forEach(async (_skill, index) =>{
+      let {error} = validateSkill({skill: _skill});
+      if (error) {
+        if (errors['skills'] && Array.isArray(errors['skills'])) {
+             errors.skills.push({index, "errors": convertToForms(error)})} 
+        else {
+          errors.skills = [];
+          errors.skills.push({index, "errors": convertToForms(error)})
+        }
+      }
+
+      else{
+        validSkills.push(_skill);
+      }
+
+    })
+  }
+
+    //check if there are any errors from data we validated from education, experience, etc
+  
+     if (Object.entries(errors).length > 0) {
+      return res.status(422).json({
+        status: 422,
+        message: errors
+      });
+    };
+
+
+    //now store all data we received
+    for (var key in information){
+      schema=information[key].schema
+      target=information[key].target
+      data= information[key].data
+
+      data.forEach(async (_entry, index) => {
+        //save entries to various documents and add to user information
+        console.log(_entry);
+        let document= new schema(_entry);
+        target.push(document);
+        await document.save();
+      })
+    };
+
+    //store skills as well
+    validSkills.forEach( async (_skill, index)=>{
+      current_user.skills.push(_skill);
+    });
 
     //set onboarding flag to true
     current_user.onboarded=true;
     await current_user.save();
 
-    result=lodash.pick(current_user, ['firstName','lastName', 'email', 
-    'education', 'experience', 'certifications', 'honorsAwards'])
+    result=lodash.pick(current_user, ['firstName','lastName', 'email'])
     
       return res.status(200).send({
         message: "Successfully completed Onboarding status",
-        user: current_user});
+        user: result});
 } 
 catch(error){
 

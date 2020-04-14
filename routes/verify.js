@@ -1,5 +1,4 @@
-const {User, validateUser, validateUserName, validateDreamJob, 
-    validateSkill, validateSocialMedia, validateExperience}= require('../models/user');
+const {BaseUser}= require('../models/user');
 const {Brand}=require('../models/brand');
 const mongoose =require('mongoose');
 const express= require('express');
@@ -40,7 +39,7 @@ router.get('/confirmation/:token', async (req,res)=>{
       if (!token) return res.status(404).send({ type: 'not-verified', msg: 'We were unable to find a valid token. Your token my have expired.' });
   
       // If we found a token, find a matching user
-      let user= await User.findOne({ _id: token.user})
+      let user= await BaseUser.findOne({ _id: token.user})
           if (!user) return res.status(404).send({ msg: 'We were unable to find a user for this token.' });
           if (user.isActive) return res.status(401).send({ type: 'already-verified', msg: 'This user has already been verified.' });
   
@@ -90,7 +89,7 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     try{
   
-    let user = await User.findOne({email:req.body.email});
+    let user = await BaseUser.findOne({email:req.body.email});
     if (!user) return res.status(404).send('User does not exist.');
 
     // Create a verification token, save it, and send email
@@ -150,7 +149,7 @@ router.get('/confirmation/:token', async (req,res)=>{
       if (!token) return res.status(404).send({ type: 'not-verified', msg: 'We were unable to find a valid token. Your token my have expired.' });
   
       // If we found a token, find a matching user
-      let user= await User.findOne({ _id: token.user})
+      let user= await BaseUser.findOne({ _id: token.user})
       if (!user) return res.status(404).send({ msg: 'We were unable to find a user for this token.' });
 
 
@@ -197,7 +196,7 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     try{
   
-    let user = await User.findOne({email:req.body.email});
+    let user = await BaseUser.findOne({email:req.body.email});
     if (!user) return res.status(404).send('User does not exist.');
 
     var token = await new Token({ user: user._id, token: crypto.randomBytes(16).toString('hex') });

@@ -1,4 +1,4 @@
-const {User}= require('../models/user');
+const {BaseUser}= require('../models/user');
 const mongoose =require('mongoose');
 const express= require('express');
 const lodash=require('lodash');
@@ -22,7 +22,7 @@ router.post('/', async (req,res) =>{
 
     //we also need to make sure user is in the database already
     //we can use the mongoose user model to find the user
-    let user =await User.findOne({email:req.body.email});
+    let user =await BaseUser.findOne({email:req.body.email});
     if (!user) return res.status(404).send('Please provide the correct login information');
 
     //if the user account has not been verified let them know

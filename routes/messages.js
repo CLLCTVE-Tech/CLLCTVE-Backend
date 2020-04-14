@@ -1,6 +1,6 @@
 var express = require('express'),
     models = require('../models/tweet'),
-    {User}=require('../models/user'),
+    {BaseUser}=require('../models/user'),
     auth= require('../middleware/auth'),
     router = express.Router(),
     http = require('http').Server(router),
@@ -65,7 +65,7 @@ const logger= require('../config/logger');
 
         console.log(req.body)
 
-       await User.findOne({ _id: req.body.target}, function(err, target) {
+       await BaseUser.findOne({ _id: req.body.target}, function(err, target) {
             if (target) {
                 var messageData = { user: req.user.id, message: req.body.message, target: req.body.target};
                 var message = new Message(messageData);

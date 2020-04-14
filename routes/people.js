@@ -1,6 +1,6 @@
 var express = require('express'),
     models = require('../models/tweet'),
-    {User}=require('../models/user'),
+    {BaseUser}=require('../models/user'),
     {Brand}=require('../models/brand'),
     auth= require('../middleware/auth'),
 	_ = require('underscore'),
@@ -36,7 +36,7 @@ var did_i_follow = function(users, followers) {
 
     try{
 
-    User.find({}).lean().exec(function(err, people) {
+    BaseUser.find({}).lean().exec(function(err, people) {
         Follow.find({ user: req.user.id }).exec(function(err, follows) {
             if (err) return next(err);
             did_i_follow(people, follows);
@@ -68,7 +68,7 @@ router.get('/:id', auth, async function(req, res) {
 
     try{
 
-        const user = await User.findOne({_id:req.user.id}).select("-password");
+        const user = await BaseUser.findOne({_id:req.user.id}).select("-password");
     
         
     
