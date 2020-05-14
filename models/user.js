@@ -192,7 +192,11 @@ function validateEducation(education){
         school: Joi.string().min(3).max(60).required(),
         degree: Joi.string().min(5).max(60).required(),
         major: Joi.string().min(5).max(60).required(),
-        gradMonthYear: Joi.string().min(5).max(50).required(),
+        startMonthYear: Joi.string().min(5).max(50),
+        gradMonthYear: Joi.string().min(5).max(50),
+        isEnrolled: Joi.boolean(),
+        city: Joi.string().min(5).max(60),
+        state: Joi.string().min(2).max(15)
     }
 
     return Joi.validate(education, schema);
@@ -204,8 +208,7 @@ function validateCertification(certification){
         title: Joi.string().min(5).max(60).required(),
         organization: Joi.string().min(5).max(60).required(),
         issuedMonthYear: Joi.string().min(5).max(50).required(),
-        expMonth: Joi.string().min(2).max(15).required() ,
-        expYear:Joi.string().min(2).max(15).required(),
+        expMonthYear: Joi.string().min(5).max(50),
         certificationID: Joi.string().min(5).max(50).required(),
         links:Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)

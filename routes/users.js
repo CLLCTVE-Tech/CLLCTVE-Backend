@@ -5,7 +5,7 @@ const {User, Education, Experience, Certification, HonorAward,
 
 const mongoose =require('mongoose');
 const express= require('express');
-const lodash=require('lodash');
+const _=require('lodash');
 const jwt=require('jsonwebtoken');
 const router=express.Router();
 const bcrypt =require('bcrypt');
@@ -17,8 +17,11 @@ const crypto= require('crypto');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const config = require('config');
-const joiToForms = require('joi-errors-for-forms').form;
+const joiErrors = require('joi-errors-for-forms');
+const joiToForms = joiErrors.form;
+const joiToMongoose = joiErrors.mongoose;
 const convertToForms = joiToForms();
+const convertToMongoose = joiToMongoose();
 const setUserInfo = require('../lib/helpers').setUserInfo;
 const isArray = require('../lib/helpers').isArray;
 
@@ -45,13 +48,21 @@ router.post('/signup', async (req,res) =>{
       console.log('validateUser, convertToForms(error): ', convertToForms(error));
       return res.status(422).json({
         status: 422,
-        message: convertToForms(error)
+        message: 'Failed, Error in form',
+        errors: convertToForms(error)
       });
     }
 
     //check if email is an edu email for now.
-    if (!req.body.email.endsWith(".edu"))
-    return res.status(401).send("Email must be an edu email");
+    if (!req.body.email.endsWith(".edu")) {
+      return res.status(401).send({
+        status: 401,
+        message: 'Failed, Error in form',
+        errors: {
+          'email': 'email must be an edu'
+        }
+      });
+    }
 
     //check if password is complex enough:
     //var regularExpression = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
@@ -62,7 +73,13 @@ router.post('/signup', async (req,res) =>{
     //we also need to make sure user isn't in the database already
     //we can use the mongoose user model to find the user
     let user = await User.findOne({email:req.body.email});
-    if (user) return res.status(404).send('User is already in database.');
+    if (user) return res.status(404).json({
+      status: 422,
+      message: 'Failed, Error in form',
+      errors: {
+        'email': 'email address already taken.'
+      }
+    });
     
     //create new user object if validation tests have been passed
     user=new User({
@@ -114,7 +131,6 @@ router.post('/signup', async (req,res) =>{
         //res.status(200).send('Email sent: ' + info.response)
       }
     });
-
     
     //we can use lodash to easily return fields we want to work with
     // result=lodash.pick(user, ['firstName','email']);
@@ -133,15 +149,20 @@ router.post('/signup', async (req,res) =>{
     } catch(error){
 
         console.error(error);
-        return res.status(500).send("Sorry an error occured please try again later.");
-    };
+        
+        return res.status(500).json({
+          message: "Sorry an error occured please try again later.",
+          errors: error || ''
+        });
+    }
 
 });
 
 router.post('/onboarding', auth, async(req,res)=>{
   
+  
   const education = req.body.education;
-  console.log('education: ', education);
+  
   try{
       const current_user=await User.findOne({_id:req.user.id}).select("-password");
       if (!current_user) return res.status(404).send("The User was not found. ");
@@ -149,12 +170,14 @@ router.post('/onboarding', auth, async(req,res)=>{
       //check if req has at least education and experience information, if not,
       //an error will occur.
 
-      if (!req.body.hasOwnProperty("education")) return res.status(401).send("Education is required in the onboarding process");
+      if (!req.body.hasOwnProperty("education")) return res.status(422).send({
+        message: "Education is required in the onboarding process"
+      });
       // if (!req.body.hasOwnProperty("experience")) return res.status(401).send("Experience is required in the onboarding process");
 
       //check if education and experience are arrays
 
-      if (!Array.isArray(education)) return res.status("401").send("Education must be in array format");
+      if (!Array.isArray(education)) return res.status(422).send("Education must be in array format");
       // if (!Array.isArray(req.body.experience)) return res.status("401").send("Experience must be in array format");
       // if (education.length===0) return res.status("401").send("Education array is empty");
       // if (req.body.experience.length===0) return res.status("401").send("Experience array is empty");
@@ -184,20 +207,22 @@ router.post('/onboarding', auth, async(req,res)=>{
       }
     });
     
-    if (errors) {
+    if (!_.isEmpty(errors)) {
       return res.status(422).json({
         status: 422,
         message: errors
       });
     }
     
+    current_user.education = education;
+    
     //set onboarding flag to true
     current_user.onboarded=true;
     await current_user.save();
     
-      return res.status(200).json({
-        message: "Successfully completed Onboarding stats",
-        user: current_user});
+    return res.status(200).json({
+      message: "Successfully completed Onboarding stats",
+      user: current_user});
 }
 catch(error){
 

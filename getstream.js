@@ -2,23 +2,23 @@ exports.config = {
   /**
    * GetStream.io API key
    */
-  apiKey: '',
+  apiKey: 'y93qt9fafvrp',
   /**
    * GetStream.io API Secret
    */
-  apiSecret: '',
+  apiSecret: 'etb6k4hcnk7wdjqcbufb7zas7mjmqkuquvxykgfwgfxwjef92zeenqrk9tjnz4u4',
   /**
    * GetStream.io API App ID
    */
-  apiAppId: '',
+  apiAppId: '63227',
   /**
    * GetStream.io API Location
    */
-  apiLocation: '',
+  apiLocation: 'us-east',
   /**
    * GetStream.io User Feed slug
    */
-  userFeed: '',
+  userFeed: 'user',
   /**
    * GetStream.io Notification Feed slug
    */

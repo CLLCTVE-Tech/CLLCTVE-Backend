@@ -1,8 +1,8 @@
 {
   "jwtPrivateKey":"jwtPrivateKey",
   "brandPrivateKey":"myBrandSecureKey",
-  "mongoString": "mongodb+srv://cllctve-mongodb:cllctve-password@cluster0-cpxgl.gcp.mongodb.net/alphastage?retryWrites=true&w=majority",
-  "mongoStringV2": "mongodb://localhost:27017/alphastage",
+  "mongoString": "mongodb://cllctve-db/alphastage?authSource=admin",
+  "mongoStringV2": "mongodb://cllctve-db/alphastage?authSource=admin",
   "mailchimpInstance"  :"us17",
   "creativeID"      :  "35625c24b0",
   "brandID"            : "1d46dcf99e",
