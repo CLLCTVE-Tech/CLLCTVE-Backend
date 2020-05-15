@@ -2,6 +2,7 @@ const Mongoose = require('mongoose');
 const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
+const SKILLS = require('../lib/helpers').skills;
 
 //Create User Schema before feeding it into the Model object
 
@@ -78,14 +79,27 @@ const userSchema=new Mongoose.Schema({
     isVerified: {type:Boolean, default: false},
     skills: {type:Array, default: []},
     isActive: {type: Boolean, default: false},
-
+    
+    licensesCerts:[{
+        title: String,
+        organization: String,
+        issuedMonthYear: String,
+        expMonthYear: String,
+        certificationID: String,
+        links: String,
+        description: String,
+        canExpire: Boolean
+    }],
+    
     experience:[{
         title: String,
         company: String,
-        from: String,
-        to: String,
+        startDate: String,
+        endDate: String,
+        city: String,
+        state: String,
         description: String,
-        currentlyWorking: Boolean
+        currentEmployer: Boolean
     }],
 
     education:[{
@@ -95,6 +109,15 @@ const userSchema=new Mongoose.Schema({
         startMonthYear: String,
         endMonthYear: String,
         isEnrolled: Boolean,
+    }],
+    
+    honorsAwards:[{
+        title: String,
+        association: String,
+        issuer: String,
+        issuedMonthYear: String,
+        links: String,
+        description: String,
     }],
 
     //this will determine membership
@@ -130,14 +153,14 @@ function validateUser(user){
     };
 
     return Joi.validate(user, schema, { convert: true, abortEarly: false });
-};
+}
 
 function validateUserName(userName){
     let schema={
         username: Joi.string().min(5).max(50).required()
     };
     return Joi.validate(userName, schema);
-};
+}
 
 function validateDreamJob(job){
     
@@ -146,15 +169,15 @@ function validateDreamJob(job){
     };
 
     return Joi.validate(job, schema);
-};
+}
 
 function validateSkill(skill){
+    let _skill = {skill};
     let schema={
-        skill: Joi.string().min(3).max(50)
+        skill: Joi.string().valid(SKILLS)
     };
-    return Joi.validate(skill, schema);
-    
-};
+    return Joi.validate(_skill, schema);
+}
 
 function validateSocialMedia(socialMedia){
 
@@ -168,20 +191,22 @@ function validateSocialMedia(socialMedia){
     };
 
     return Joi.validate(socialMedia, schema);
-};
+}
 
 function validateExperience(userExperience){
 
     let schema={
-        title: Joi.string().min(5).max(60).required(),
-        company: Joi.string().min(5).max(60).required(),
-        from: Joi.string().required(),
-        to: Joi.string().required(),
-        description: Joi.string().min(15).max(200).required(),
-        currentlyWorking: Joi.boolean()
+        title: Joi.string().min(3).max(60).required(),
+        company: Joi.string().min(3).max(60).required(),
+        city: Joi.string().min(5).max(60).optional(),
+        state: Joi.string().min(2).max(15).optional(),
+        startDate: Joi.string().min(5).max(50),
+        endDate: Joi.string().min(5).max(50),
+        description: Joi.string().min(15).max(200).optional(),
+        currentEmployer: Joi.boolean()
     };
 
-    if (userExperience.currentlyWorking===true) schema.to=Joi.date().string();
+    if (userExperience.currentEmployer===true) schema.endDate=Joi.date().toString();
 
     return Joi.validate(userExperience, schema, { convert: true, abortEarly: false });
 }
@@ -197,7 +222,7 @@ function validateEducation(education){
         isEnrolled: Joi.boolean(),
         city: Joi.string().min(5).max(60),
         state: Joi.string().min(2).max(15)
-    }
+    };
 
     return Joi.validate(education, schema);
 }
@@ -206,13 +231,14 @@ function validateCertification(certification){
 
     let schema={
         title: Joi.string().min(5).max(60).required(),
-        organization: Joi.string().min(5).max(60).required(),
+        organization: Joi.string().min(3).max(60).required(),
         issuedMonthYear: Joi.string().min(5).max(50).required(),
         expMonthYear: Joi.string().min(5).max(50),
-        certificationID: Joi.string().min(5).max(50).required(),
+        certificationID: Joi.string().min(5).max(50),
         links:Joi.string().allow('').optional().max(150),
-        description: Joi.string().min(20).max(150)
-    }
+        description: Joi.string().min(20).max(150).optional(),
+        canExpire: Joi.boolean().optional()
+    };
 
     return Joi.validate(certification, schema);
 }
@@ -227,7 +253,7 @@ function validateHonorsAwards(award){
         links: Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)
      
-    }
+    };
 
     return Joi.validate(award, schema);
 }
@@ -290,7 +316,7 @@ const honorsAwardSchema=new Mongoose.Schema({
 const EducationModel=Mongoose.model("Education", educationSchema);
 const ExperienceModel=Mongoose.model("Experience", experienceSchema);
 const CertificationModel=Mongoose.model("Certification", certificationSchema);
-const HonorAwardModel=Mongoose.model("Honor Awards", honorsAwardSchema);
+const HonorAwardModel=Mongoose.model("HonorAwards", honorsAwardSchema);
 
 
 exports.validateUser= validateUser;
@@ -300,6 +326,8 @@ exports.validateSkill=validateSkill;
 exports.validateExperience=validateExperience;
 exports.validateEducation=validateEducation;
 exports.validateSocialMedia=validateSocialMedia;
+exports.validateCertification=validateCertification;
+exports.validateHonorsAwards=validateHonorsAwards;
 //exports.validateUser= validateUser;
 exports.User= UserModel;
 exports.Education= EducationModel;

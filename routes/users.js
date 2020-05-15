@@ -46,8 +46,6 @@ router.post('/signup', async (req, res) => {
     }
     let {error} = validateUser(userData);
     if (error) {
-      console.log('validateUser, error: ', error);
-      console.log('validateUser, convertToForms(error): ', convertToForms(error));
       return res.status(422).json({
         status: 422,
         message: 'Failed, Error in form',
@@ -162,14 +160,11 @@ router.post('/signup', async (req, res) => {
 
 router.post('/onboarding', auth, async (req, res) => {
   
+  const education = req.body.education;
+  
   try {
     const current_user = await User.findOne({_id: req.user.id}).select('-password');
     if (!current_user) return res.status(404).send('The User was not found. ');
-    
-    //check if req has at least education and experience information, if not,
-    //an error will occur.
-    
-    
     
     if (!req.body.hasOwnProperty('education')) return res.status(422).send({
       message: 'Education is required in the onboarding process'
@@ -180,61 +175,49 @@ router.post('/onboarding', auth, async (req, res) => {
     //check if education and experience are arrays
   
     if (!Array.isArray(education)) return res.status(422).send('Education must be in array format');
-    const education = req.body.education;
+    
     // if (!Array.isArray(req.body.experience)) return res.status("401").send("Experience must be in array format");
     // if (education.length===0) return res.status("401").send("Education array is empty");
     // if (req.body.experience.length===0) return res.status("401").send("Experience array is empty");
     
-    if (req.body.hasOwnProperty('experience') && (!Array.prototype.isArray(req.body.experience))) {
-      return res.status(422).send({
-        message: 'Experience must be in array format'
-      });
-    }
+    const validationMap = {
+      'education': validateEducation,
+      'skills': validateSkill,
+      'experience': validateExperience,
+      'licensesCerts': validateCertification,
+      'honorsAwards': validateHonorsAwards,
+    };
     
-    if (req.body.hasOwnProperty('skills') && (!Array.prototype.isArray(req.body.skills))) {
-      return res.status(422).send({
-        message: 'Skills must be in array format'
-      });
-    }
-  
-    if (req.body.hasOwnProperty('licensesCerts') && (!Array.prototype.isArray(req.body.skills))) {
-      return res.status(422).send({
-        message: 'licensesCerts must be in array format'
-      });
-    }
-  
-    if (req.body.hasOwnProperty('honorsAwards') && (!Array.prototype.isArray(req.body.skills))) {
-      return res.status(422).send({
-        message: 'honorsAwards must be in array format'
-      });
-    }
+    let additionalFields = [];
+    ['experience', 'skills', 'licensesCerts', 'honorsAwards'].forEach((field, index) => {
+      if (req.body.hasOwnProperty(`${field}`) && (!Array.isArray(req.body[`${field}`]))) {
+        return res.status(422).send({
+          message: `${field} must be in array format`
+        });
+      }
+      
+      if (req.body.hasOwnProperty(`${field}`)) {
+        additionalFields.push(field);
+      }
+    });
     
     //proceed to add information pertaining to education and experience
     
     //Validate education from front end
     let errors = {};
+    let _eduErrorsArray = validateFields('education', education, validateEducation);
     
-    education.forEach((_education, index) => {
-      console.log('education loop, _education # %d, _education item: %s', index, _education);
+    if (!_.isEmpty(_eduErrorsArray)) {
+      errors[`education`] = _eduErrorsArray;
+    }
+    
+    additionalFields.forEach((_field, index) => {
+      let _fieldsErrorsArray = validateFields(_field, req.body[`${_field}`], validationMap[_field]);
       
-      let {error} = validateEducation(_education);
-      if (error) {
-        if (errors['education'] && isArray(errors['education'])) {
-          errors.education.push({
-            index,
-            'errors': convertToForms(error)
-          })
-        } else {
-          errors.education = [];
-          errors.education.push({
-            index,
-            'errors': convertToForms(error)
-          })
-        }
+      if (!_.isEmpty(_fieldsErrorsArray)) {
+        errors[`${_field}`] = _fieldsErrorsArray;
       }
     });
-    
-    ex
     
     if (!_.isEmpty(errors)) {
       return res.status(422).json({
@@ -244,6 +227,10 @@ router.post('/onboarding', auth, async (req, res) => {
     }
     
     current_user.education = education;
+  
+    additionalFields.forEach((_field, index) => {
+      current_user[`${_field}`] = req.body[`${_field}`];
+    });
     
     //set onboarding flag to true
     current_user.onboarded = true;
@@ -261,6 +248,23 @@ router.post('/onboarding', auth, async (req, res) => {
     
   }
 });
+
+function validateFields(fieldName, fieldArray, validateFn) {
+  let errors = [];
+  fieldArray.forEach((_entry, index) => {
+    let {error} = validateFn(_entry);
+    if (error) {
+      errors.push({
+        index,
+        'errors': convertToForms(error)
+      });
+    }
+  });
+  
+  if (!_.isEmpty(errors)) {
+    return errors;
+  }
+}
 
 //export router
 module.exports = router;
