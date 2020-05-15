@@ -44,9 +44,12 @@ const multerMid = multer({
 const originWhiteList = config.get("CLLCTVE_CORS");
 
 const corsHandler = cors({
+  origin: (origin, cb) => {
+    cb(null, originWhiteList.indexOf(origin) !== -1);
+  },
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: [
-    'x-auth-token',
+    'X-AUTH-TOKEN',
     'X-Requested-With',
     'Access-Control-Allow-Headers',
     'Access-Control-Allow-Origin',
@@ -58,12 +61,11 @@ const corsHandler = cors({
     'uid'
   ],
   credentials: true,
-  origin: (origin, cb) => {
-    cb(null, originWhiteList.indexOf(origin) !== -1);
-  },
 });
 
 const app=express();
+
+app.disable('x-powered-by');
 
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -130,7 +132,6 @@ app.get('/api/status', (req, res, next) => {
 });
 
 const port = process.env.PORT || 3001;
-
 
 // for real time purposes
 

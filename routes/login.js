@@ -29,7 +29,7 @@ router.post('/', async (req,res) =>{
         message: 'Please provide the correct login information'
     });
 
-    if (!user.isActive) return res.status(404).send('Your account has not been verfified.');
+    // if (!user.isActive) return res.status(404).send('Your account has not been verfified.');
     
     //Lets check if the password matches the encrypted password in the database
     const validPassword=await bcrypt.compare(req.body.password, user.password);
@@ -42,7 +42,7 @@ router.post('/', async (req,res) =>{
     const userInfo = setUserInfo(user);
 
     //its also good practice to store the private key in an environment variable.
-    return res.header('x-auth-token', web_token)
+    return res.header('X-AUTH-TOKEN', web_token)
       .status(200).json({
         token: `Bearer ${web_token}`,
         user: userInfo
