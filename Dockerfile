@@ -7,14 +7,13 @@ WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
 
-# Quiet flag improves install speed, reduces log noise, and still lets you know when something went wrong
-RUN npm install --quiet && \
+RUN npm ci && \
   rm -rf /root/.npm
-
-COPY ./ ./
 
 EXPOSE 3001
 EXPOSE 27018
+
+COPY ./ ./
 
 # RUN npm run test:ci
 #RUN npm run build
