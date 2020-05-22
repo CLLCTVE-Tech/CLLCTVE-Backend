@@ -11,7 +11,7 @@ RUN npm ci && \
   rm -rf /root/.npm
 
 EXPOSE 3001
-EXPOSE 27018
+EXPOSE 27017
 
 COPY ./ ./
 

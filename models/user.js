@@ -216,7 +216,7 @@ function validateEducation(education){
     let schema={
         school: Joi.string().min(3).max(60).required(),
         degree: Joi.string().min(5).max(60).required(),
-        major: Joi.string().min(5).max(60).required(),
+        major: Joi.string().min(3).max(60).required(),
         startMonthYear: Joi.string().min(5).max(50),
         gradMonthYear: Joi.string().min(5).max(50),
         isEnrolled: Joi.boolean(),
@@ -230,7 +230,7 @@ function validateEducation(education){
 function validateCertification(certification){
 
     let schema={
-        title: Joi.string().min(5).max(60).required(),
+        title: Joi.string().min(3).max(60).required(),
         organization: Joi.string().min(3).max(60).required(),
         issuedMonthYear: Joi.string().min(5).max(50).required(),
         expMonthYear: Joi.string().min(5).max(50),
@@ -246,9 +246,9 @@ function validateCertification(certification){
 function validateHonorsAwards(award){
 
     let schema={
-        title: Joi.string().min(5).max(60).required(),
+        title: Joi.string().min(3).max(60).required(),
         association: Joi.string().min(5).max(100).required(),
-        issuer: Joi.string().min(5).max(60).required(),
+        issuer: Joi.string().min(3).max(60).required(),
         issuedMonthYear: Joi.string().min(5).max(50).required(),
         links: Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)
