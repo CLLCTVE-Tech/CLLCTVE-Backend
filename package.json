@@ -1,11 +1,14 @@
 {
-  "name": "cllctve-alpha",
-  "version": "1.0.0",
+  "name": "cllctve-beta",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "11.15.0"
   },
   "keywords": [],
   "author": "",

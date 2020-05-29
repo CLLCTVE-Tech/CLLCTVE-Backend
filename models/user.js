@@ -137,7 +137,15 @@ const userSchema=new Mongoose.Schema({
 //we can create fucntions with the user model using mongoose!
 
 userSchema.methods.generateAuthToken = function() {
-    const token=jwt.sign({id:this._id, isAdmin: this.isAdmin}, config.get('jwtPrivateKey'));
+    const token=jwt.sign(
+      {
+          id:this._id,
+          isAdmin: this.isAdmin,
+          role: [ (this.isAdmin ? 'Admin' : 'Creative') ]
+    },
+      config.get('jwtPrivateKey')
+    );
+    
     return token;
 };
 
