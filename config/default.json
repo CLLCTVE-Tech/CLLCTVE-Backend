@@ -16,5 +16,5 @@
   "twilAccountSid" : "AC257e2e21c6300609dd65db837120a524",
   "twilAuthToken" : "4a219eb4717c67ffdb003d4ee90e2740",
   "twilNumber" :"+19372041442",
-  "CLLCTVE_CORS": ["http://localhost:3000", "http://localhost:5000", "http://dev.cllctve-test.com"]
+  "CLLCTVE_CORS": ["http://localhost:3000", "http://localhost:5000", "http://www.cllctve.com", "https://cllctve-prod.ue.r.appspot.com/"]
 }
