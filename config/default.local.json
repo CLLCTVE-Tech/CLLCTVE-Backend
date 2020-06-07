@@ -1,8 +1,8 @@
 {
   "jwtPrivateKey":"jwtPrivateKey",
   "brandPrivateKey":"myBrandSecureKey",
-  "mongoString": "mongodb+srv://cllctve-mongodb:cllctve-password@cluster0-cpxgl.gcp.mongodb.net/alphastage?retryWrites=true&w=majority",
-  "mongoStringV2": "mongodb://cllctve-mongodb:cllctve-password@cluster0-shard-00-00-cpxgl.gcp.mongodb.net:27017,cluster0-shard-00-01-cpxgl.gcp.mongodb.net:27017,cluster0-shard-00-02-cpxgl.gcp.mongodb.net:27017/alphastage?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin&retryWrites=true&w=majority",
+  "mongoString": "mongodb://cllctve-db/alphastage?authSource=admin",
+  "mongoStringV2": "mongodb://cllctve-db/alphastage?authSource=admin",
   "mailchimpInstance"  :"us17",
   "creativeID"      :  "35625c24b0",
   "brandID"            : "1d46dcf99e",
@@ -16,5 +16,5 @@
   "twilAccountSid" : "AC257e2e21c6300609dd65db837120a524",
   "twilAuthToken" : "4a219eb4717c67ffdb003d4ee90e2740",
   "twilNumber" :"+19372041442",
-  "CLLCTVE_CORS": ["http://localhost:3000", "http://localhost:5000", "http://dev.cllctve-test.com"]
+  "CLLCTVE_CORS": ["http://localhost:3000", "http://localhost:5000", "http://www.cllctve.com", "https://cllctve-prod.ue.r.appspot.com/"]
 }
