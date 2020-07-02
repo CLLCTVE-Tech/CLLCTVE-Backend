@@ -26,19 +26,19 @@ const status= require('./config/status');
 
 const cron = require('node-cron');
 const bodyParser=require('body-parser');
-const multer=require('multer');
+//const multer=require('multer');
 
 //Will be used for logging into mongoDB
 const winston = require('winston');
 require('winston-mongodb');
 const logger=require('./config/logger');
 
-const multerMid = multer({
+/*const multerMid = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
-})
+})*/
 
  
 //set up Cors handler
@@ -78,11 +78,12 @@ var io = require('socket.io')(http);
 */
 
 //let app store files using multer
-app.use(multerMid.single('file'))
-
+//app.use(multerMid.single('file'))
 
 //let app parse json objects
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
+// to support URL-encoded bodies
+app.use(express.urlencoded({limit: '50mb'}));
 
 
 //enable Cross-origin resource sharing (CORS)

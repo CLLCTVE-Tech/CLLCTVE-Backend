@@ -1,21 +1,120 @@
-const {User}= require('../models/user');
+const {BaseUser}= require('../models/user');
 const admin = require('../middleware/admin');
 const auth=require("../middleware/auth");
 const {InsightFeed}= require('../models/insight')
 const logger=require('../config/logger');
+const request=require('superagent');
+const config= require('config');
 
-router.post('/feed/add', [auth,admin], async (req, res)=>{
+
+router.get('/default/feed', [auth], async function(req, res) {
+
+  try{
+
+    let feedID= 266;
+
+    //if we have no queries, return first 10 results from page 1 by default.
+    if (Object.keys(req.query)==0){
+      const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}`)
+      .set('X-API-ACCESS-KEY', config.get('considAccess'))
+      .set('X-API-SECRET-KEY', config.get('considSecret'));
+
+  return res.status(200).send({
+    message: 'Successfully processed insights',
+    insights:data.body.insights
+  });
+    }
+
+    else{
+
+      const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}?current_page='+req.query.page +
+      '&per_page=`+ req.query.limit)
+      .set('X-API-ACCESS-KEY', config.get('considAccess'))
+      .set('X-API-SECRET-KEY', config.get('considSecret'));
+
+  return res.status(200).send({
+    message: 'Successfully processed insights',
+    insights: data.body.insights
+  });
+
+    }
+
+  }
+
+  catch(error){
+
+      console.error(error);
+      logger.error({message:"An error occurred ", error:error})
+      return res.status(500).send("Sorry an error occured please try again later.");
+  
+  }
+
+});
+
+router.get('/custom/feed', [auth], async function(req, res) {
 
     try{
+
+      const feed= await InsightFeed.findOne({user: req.user.id})
+
+      //defualt feedID is 266
+      if(!feed) return res.status(404).send("Error, you do not have a feed setup");
+      let feedID= feed.feedID;
+
+      //if we have no queries, return first 10 results from page 1 by default.
+      if (Object.keys(req.query)==0){
+        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}`)
+        .set('X-API-ACCESS-KEY', config.get('considAccess'))
+        .set('X-API-SECRET-KEY', config.get('considSecret'));
+
+    return res.status(200).send({
+      message: 'Successfully processed insights',
+      insights:data.body.insights
+    });
+      }
+
+      else{
+
+        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}?current_page='+req.query.page +
+        '&per_page=`+ req.query.limit)
+        .set('X-API-ACCESS-KEY', config.get('considAccess'))
+        .set('X-API-SECRET-KEY', config.get('considSecret'));
+
+    return res.status(200).send({
+      message: 'Successfully processed insights',
+      insights: data.body.insights
+    });
+
+      }
+
+    }
+
+    catch(error){
+
+        console.error(error);
+        logger.error({message:"An error occurred ", error:error})
+        return res.status(500).send("Sorry an error occured please try again later.");
+    
+    }
+
+  });
+
+router.post('/feed', [auth,admin], async (req, res)=>{
+
+    try{
+
+    
+      const current= await BaseUser.findOne({email: req.body.email})
+      if (!current) return res.status(401).send("The user you are trying to create a feed for does not exist");
   
       //create a new feed element based on brand info
       feedData={
-          user: req.body.brandID,
+          user: current._id,
           feedID: req.body.feedID,
           createdBy: req.user.id
       }
 
-    feed= new InsightFeed(feed);
+    let feed= new InsightFeed(feedData);
     await feed.save();
 
     return res.status(200).send({
@@ -33,7 +132,7 @@ router.post('/feed/add', [auth,admin], async (req, res)=>{
 
 
   //modify data of a current feed, like change feed id
-  router.put('/feed/modify',[auth,admin], async (req, res)=>{
+  router.put('/feed',[auth,admin], async (req, res)=>{
 
     try{
   
@@ -59,7 +158,7 @@ router.post('/feed/add', [auth,admin], async (req, res)=>{
   
   });
 
-  router.delete('/feed/delete', [auth,admin], async (req, res)=>{
+  router.delete('/feed', [auth,admin], async (req, res)=>{
 
     try{
         

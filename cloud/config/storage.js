@@ -1,16 +1,14 @@
-const Cloud = require('@google-cloud/storage')
+const {Storage} = require('@google-cloud/storage');
 const path = require('path')
 const serviceKey = path.join(__dirname, './storageKeys.json')
 const config = require('config');
 
-const { Storage } = Cloud
 const storage = new Storage({
   keyFilename: serviceKey,
   projectId: config.get("gcpProjectId"),
 })
 
-//functions to check if a user bucket exists
-
+    //functions to check if a user bucket exists
     async function listBuckets() {
         // [START storage_list_buckets]
         // Imports the Google Cloud client library

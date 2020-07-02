@@ -1,7 +1,7 @@
 var express = require('express'),
     {User}=require('../models/user'),
     auth= require('../middleware/auth'),
-    isBrand=require('../middleware/isBrand'),
+
 	_ = require('underscore'),
 	async = require('async'),
     stream_node = require('getstream-node'),
@@ -108,52 +108,7 @@ router.get('/graph', [auth], async function(req, res) {
 });
 
 
-router.get('/insights', [auth], async function(req, res) {
 
-    try{
-
-      const feedID= InsightFeed.findOne({user: req.user.id})
-
-      //defualt feedID is 266
-      if(!feedID) return res.status(404).send("Error, you do not have a feed setup");
-
-      //if we have no queries, return first 10 results from page 1 by default.
-      if (Object.keys(req.query)==0){
-        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}`)
-        .set('X-API-ACCESS-KEY', config.get('considAccess'))
-        .set('X-API-SECRET-KEY', config.get('considSecret'));
-
-    return res.status(200).send({
-      message: 'Successfully processed insights',
-      insights:data.body.insights
-    });
-      }
-
-      else{
-
-        const data = await request.get(`https://www.considdr.com/api/v1/projects/${feedID}?current_page='+req.query.page +
-        '&per_page=`+ req.query.limit)
-        .set('X-API-ACCESS-KEY', config.get('considAccess'))
-        .set('X-API-SECRET-KEY', config.get('considSecret'));
-
-    return res.status(200).send({
-      message: 'Successfully processed insights',
-      insights:data.body.insights
-    });
-
-      }
-
-    }
-
-    catch(error){
-
-        console.error(error);
-        logger.error({message:"An error occurred ", error:error})
-        return res.status(500).send("Sorry an error occured please try again later.");
-    
-    }
-
-  });
 
 
 module.exports=router;

@@ -1,58 +1,90 @@
-const Mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
+const Schema=mongoose.Schema;
 
 //const phoneJoi = Joi.extend(require('joi-phone-number'));
 
 
-
+const baseOptions = {
+    discriminatorKey: 'type',
+    collection: 'Users'
+}
 //Create User Schema before feeding it into the Model object
 
-const brandSchema=new Mongoose.Schema({
+const baseSchema=new mongoose.Schema({
 
-    brandName: {type :String, required: true},
-    firstName: {type :String, required: true},
-    lastName: {type :String, required: true},
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     email: {type :String, required: true},
-    website: {type :String, required: true},
-    status:{type: String, default: "pending"},
-	date :{type: Date, default: Date.now}
-
-},
-
-{
-	collection: 'Brand Application',
-  
+    status:{type: String, required: true, default: "pending"},
+    date :{type: Date, default: Date.now}
+    
 });
 
-const contribSchema=new Mongoose.Schema({
-
-},
-
-{
-	collection: 'Contributor Application',
-  
-});
+const BaseApplication= mongoose.model("Applications", baseSchema);
 
 
-const discoverySchema=new Mongoose.Schema({
+//we generate discriminators for:
+//brand applications
+//discovery form applications
+//contributor applications
+//jobs and gigs
 
-    diagnosticReport: {type :Object, required: true},
-    competitorAudit: {type :Object, required: true},
-    contentAudit: {type :Object, required: true},
-    conusmerAudit:{type :Object, required: true},
-    brandName: {type :String, required: true},
-    email: {type :String, required: true},
-    status:{type: String, default: "pending"},
-    tier: {type: String, required: true, default: "1"},
-	date :{type: Date, default: Date.now}
-},
+const brandApp= BaseApplication.discriminator("Brand_app",
+    new mongoose.Schema({
+        brandName: {type :String, required: true},
+        firstName: {type :String, required: true},
+        lastName: {type :String, required: true},
+        website: {type :String, required: true}
+    })
+);
 
-{
-	collection: 'Brand Discovery Form',
-  
-});
+const discForm= BaseApplication.discriminator("Discovery_app",
+    new mongoose.Schema({
+        diagnosticReport: {type :Object, required: true},
+        competitorAudit: {type :Object, required: true},
+        contentAudit: {type :Object, required: true},
+        conusmerAudit:{type :Object, required: true},
+        brandName: {type :String, required: true},
+        email: {type :String, required: true},
+        status:{type: String, default: "pending"},
+        tier: {type: String, required: true, default: "1"},
+        date :{type: Date, default: Date.now}
+
+    })
+);
+
+const contribForm = BaseApplication.discriminator("Contributor_app",
+    new mongoose.Schema({
+
+    })
+
+);
+
+
+const jobApp= BaseApplication.discriminator("Jobs_app",
+    new mongoose.Schema({
+
+        jobID: { type: Schema.Types.ObjectId, required: true}
+        
+    })
+);
+
+const gigApp= BaseApplication.discriminator("Gigs_app",
+    new mongoose.Schema({
+        
+        
+    })
+);
+
+const skillApp= BaseApplication.discriminator("Skills_app",
+    new mongoose.Schema({
+
+        skill: {type: Schema.Types.ObjectId, required: true}
+    })
+);
+
 
 
 function validateBrand(brand){
@@ -100,9 +132,9 @@ function validateConsumerAudit(report){
     return Joi.validate(report, schema)
 };
 
-const brandApp= Mongoose.model("Brand Application", brandSchema);
-const discForm= Mongoose.model("Brand Discovery Form", discoverySchema);
-
+exports.jobApp= jobApp;
+exports.skillApp= skillApp;
+exports.BaseApplication= BaseApplication;
 exports.brandApp= brandApp;
 exports.discForm= discForm;
 exports.validateBrand= validateBrand;

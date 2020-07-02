@@ -13,6 +13,7 @@ module.exports=function(req, res, next){
         const decoded=jwt.verify(token, config.get('jwtPrivateKey'));
         //we can set the req of the user object to the decoded json token
         req.user=decoded;
+        console.log(decoded);
         //since this is a middleware function, we have to pass control to the next middleware
         next();
     }

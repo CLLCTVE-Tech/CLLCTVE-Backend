@@ -9,6 +9,7 @@ const joiToForms = require('joi-errors-for-forms').form;
 const convertToForms = joiToForms();
 const {Token}= require('../models/tokens');
 const crypto = require('crypto');
+const transporter= require("../config/transporter");
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const logger=require('../config/logger');
@@ -78,13 +79,6 @@ router.post('/signup', async (req,res) =>{
     await token.save();
 
     //send user verification email 
-    const transporter = nodemailer.createTransport(smtpTransport({
-      service: 'gmail',
-      auth: {
-        user: config.get("emailUser"),
-        pass: config.get("emailPass")
-      }
-    }));
 
     var mailOptions = {
       from: config.get("emailUser"),

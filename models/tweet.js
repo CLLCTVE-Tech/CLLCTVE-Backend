@@ -3,21 +3,18 @@ var mongoose = require('mongoose'),
 _ = require('underscore'),
 Schema = mongoose.Schema,
 stream_node = require('getstream-node');
-const {User} = require('./user');
-const {Brand}=require('./brand');
 
 mongoose.Promise = global.Promise;
 
+//make sure reference points to collection that actually exists , or you'll get errors.
 
 var FeedManager = stream_node.FeedManager;
 var StreamMongoose = stream_node.mongoose;
 
-
-
 var messageSchema= new mongoose.Schema({
 
-  user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-  target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+  user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+  target: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
   name: {type: String, required: false},
   message: {type : String, required: true},
   date :{type: Date, default: Date.now}
@@ -46,8 +43,8 @@ const Message= new mongoose.model('Messages', messageSchema);
 
 var mentionSchema= new mongoose.Schema({
 
-	user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-	target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+	user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+	target: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
 	tweet: {type: Schema.Types.ObjectId, required: true, ref: 'Tweet'},
 	imageUrls: {type:Array, requred:false, default:[]},
 	date :{type: Date, default: Date.now}
@@ -76,7 +73,7 @@ const Mentions= new mongoose.model('Mentions', mentionSchema);
 var tagSchema= new mongoose.Schema({
 
 	
-	user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+	user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
 	name: {type :String, required: true},
 	tweet: {type: Schema.Types.ObjectId, required: true, ref: 'Tweet'},
 	date :{type: Date, default: Date.now}
@@ -101,7 +98,7 @@ const Tag= new mongoose.model('Tags', tagSchema);
 var tweetSchema = new Schema(
 	{ 
     
-		user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+	user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
     image_url: { type: String, required: false },
     tweet:{ type: String, required: false},
     likes: { type: Number, default: 0 },
@@ -130,8 +127,8 @@ var Tweet = mongoose.model('Tweet', tweetSchema);
 var likeSchema = new Schema(
 	{ 
     
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-    target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+    target: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
 	tweet:{ type: Schema.Types.ObjectId, required: true, ref: 'Tweet' },
 	date :{type: Date, default: Date.now}
 	},
@@ -162,8 +159,8 @@ var Like= mongoose.model('Likes', likeSchema);
 var commentSchema = new Schema(
 	{ 
     
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-    target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+    target: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
     tweet:{ type: Schema.Types.ObjectId, required: true, ref: 'Tweet' }, 
     comment: {type: Schema.Types.ObjectId, required:true, ref: 'Tweet'},
     date:{type: Date, required: true, default: Date.now}
@@ -192,8 +189,8 @@ var Comment= mongoose.model('Comments', commentSchema);
 
 var followSchema = new Schema(
 	{
-		user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-		target: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+		user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+		target: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
 		date :{type: Date, default: Date.now}
 	},
 	{
@@ -235,7 +232,7 @@ var Follow = mongoose.model('Follow', followSchema);
 StreamMongoose.setupMongoose(mongoose);
 
 module.exports = {
-	Tweet: Tweet,
+  Tweet: Tweet,
   Follow: Follow,
   Message: Message,
   Like: Like,

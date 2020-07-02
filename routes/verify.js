@@ -12,8 +12,7 @@ const Joi=require('joi');
 const request = require('superagent');
 const {Token}=require('../models/tokens');
 const crypto= require('crypto');
-const nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
+const transporter= require("../config/transporter");
 const config= require('config');
 const logger=require('../config/logger');
 
@@ -98,13 +97,6 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     //if there is a user, lets resend a token they can use to login.
     //send user verification email 
-    const transporter = nodemailer.createTransport(smtpTransport({
-        service: 'gmail',
-        auth: {
-          user: config.get("emailUser"),
-          pass: config.get("emailPass")
-        }
-      }));
   
       var mailOptions = {
         from: config.get("emailUser"),
@@ -204,13 +196,6 @@ router.get('/confirmation/:token', async (req,res)=>{
 
     //if there is a user, lets resend a token they can use to login.
     //send user verification email 
-    const transporter = nodemailer.createTransport(smtpTransport({
-        service: 'gmail',
-        auth: {
-          user: config.get("emailUser"),
-          pass: config.get("emailPass")
-        }
-      }));
   
       var mailOptions = {
         from: config.get("emailUser"),

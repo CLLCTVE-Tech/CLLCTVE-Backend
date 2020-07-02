@@ -8,13 +8,13 @@ var insightSchema= new mongoose.Schema({
 
 	user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
 	feedID: { type: String, required: true},
-	date: {type: Date, required: true, default: Date.now},
+	created: {type: Date, required: true, default: Date.now},
 	createdBy: {type: Schema.Types.ObjectId, required: true, ref: 'User'}
   },
   {
 	collection: 'Insight Feeds',
   });
   
-var InsightFeed= mongoose.model('Insights', insightSchema);
+var InsightFeed= mongoose.model('Insight Feeds', insightSchema);
 
 exports.InsightFeed = InsightFeed;

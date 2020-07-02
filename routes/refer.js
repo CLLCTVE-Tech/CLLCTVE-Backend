@@ -1,6 +1,4 @@
 var express = require('express'),
-    nodemailer = require('nodemailer'),
-    smtpTransport = require('nodemailer-smtp-transport'),
     auth= require('../middleware/auth'),
     router = express.Router(),
     config=require('config');
@@ -9,6 +7,7 @@ var express = require('express'),
 const accountSid = config.get("twilAccountSid");
 const authToken = config.get("twilAuthToken");
 const logger=require('../config/logger');
+const transporter=require('../config/transporter');
 
 const TwilioClient = require('twilio')(accountSid, authToken);
 
@@ -39,13 +38,6 @@ router.post('/email',auth ,(req, res) => {
 
 try{
 
-    const transporter = nodemailer.createTransport(smtpTransport({
-        service: 'gmail',
-        auth: {
-          user: config.get("emailUser"),
-          pass: config.get("emailPass")
-        }
-      }));
   
   var mailOptions = {
     from: config.get("emailUser"),

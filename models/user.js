@@ -3,6 +3,7 @@ const Joi =require('joi');
 const jwt =require('jsonwebtoken');
 const config = require('config');
 const Schema= mongoose.Schema;
+const {Role}= require('./role')
 //const phoneJoi = Joi.extend(require('joi-phone-number'));
 
 //add discriminator so we can control user level access
@@ -48,7 +49,7 @@ const baseSchema=new mongoose.Schema({
     phone:{
         type: String,
         required: false, 
-        minlength: 10,
+        minlength: 8,
         maxlength: 50
     },
 
@@ -87,8 +88,31 @@ const baseSchema=new mongoose.Schema({
     baseOptions
 )
 
-baseSchema.methods.generateAuthToken = function() {
+/*baseSchema.methods.generateAuthToken = function() {
     const token=jwt.sign({id:this._id}, config.get('jwtPrivateKey'));
+    return token;
+};*/
+
+//preferred function
+baseSchema.methods.generateAuthToken = async function() {
+
+    let admin=false;
+    let contributor=false;
+
+    let roles= await Role.find({user: this._id});
+
+    //check for various roles
+    if (roles){
+    roles.forEach( async (_role, index) =>{
+        
+        if (_role.role_type=="Admin") admin=true;
+        if (_role.role_type=="Contributor") contributor=true;
+    })
+    }
+
+    const token=jwt.sign({id:this._id,type: this.type, role: {admin: admin, contributor: contributor},
+    }, config.get('jwtPrivateKey'), {expiresIn: '1d'});
+
     return token;
 };
 
@@ -110,8 +134,8 @@ const User= BaseUser.discriminator("User",
     experience:[{
         title: String,
         company: String,
-        from: String,
-        to: String,
+        startDate: String,
+        endDate: String,
         description: String,
         currentlyWorking: Boolean
     }],
@@ -120,8 +144,8 @@ const User= BaseUser.discriminator("User",
         school: String,
         major: String,
         degree:String,
-        from: String,
-        to: String,
+        startMonthYear: String,
+        gradMonthYear: String,
         currentlyAttending: Boolean
     }],
 
@@ -167,6 +191,11 @@ const Brand= BaseUser.discriminator("Brands",
 //it would be easier to just create a function that generates a web token from the user model each time.
 //we can create fucntions with the user model using mongoose!
 
+function validatePassword(password){
+    var regularExpression= /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
+    return regularExpression.test(password);
+}
+
 function validateUser(user){
     schema={
         firstName: Joi.string().min(3).max(50).required(),
@@ -174,7 +203,7 @@ function validateUser(user){
         phone: Joi.string().allow('').optional().max(10),
         email: Joi.string().min(8).max(255).required().email(),
         password: Joi.string().min(8).max(255).required(),
-        gradMonthYear: Joi.string().min(5).max(50).required(),
+        
     };
 
     return Joi.validate(user, schema);
@@ -184,7 +213,7 @@ function validateBrand(user){
     schema={
         firstName: Joi.string().min(3).max(50).required(),
         lastName: Joi.string().min(3).max(50).required(),
-        phone: Joi.string().allow('').optional().max(10),
+        phone: Joi.string().allow('').optional().max(15),
         email: Joi.string().min(8).max(255).required().email(),
         password: Joi.string().min(8).max(255).required()
     };
@@ -224,60 +253,66 @@ function validateSocialMedia(socialMedia){
 };
 
 function validateExperience(userExperience){
-   
-    schema={
-        title: Joi.string().min(5).max(60).required(),
+
+    let schema={
+        title: Joi.string().min(3).max(60).required(),
         company: Joi.string().min(3).max(60).required(),
-        from: Joi.string().min(2).required(),
-        to: Joi.string().min(2).required(),
-        description: Joi.string().min(15).max(200).required()
+        city: Joi.string().min(5).max(60).optional(),
+        state: Joi.string().min(2).max(15).optional(),
+        startDate: Joi.string().min(5).max(50).required(),
+        endDate: Joi.string().min(5).max(50),
+        description: Joi.string().min(15).max(200).optional(),
+        currentEmployer: Joi.boolean()
     };
 
-    if (userExperience.currentlyWorking==true) schema.to=Joi.date().string();
+    if (userExperience.currentEmployer===true) schema.endDate=Joi.date().toString();
 
-    return Joi.validate(userExperience, schema);
+    return Joi.validate(userExperience, schema, { convert: true, abortEarly: false });
 }
 
-
 function validateEducation(education){
-    
-    schema={
-        school: Joi.string().min(5).max(60).required(),
-        major: Joi.string().min(5).max(60).required(),
-        degree: Joi.string().min(3).max(60).required(),
-        from: Joi.string().min(5).required(),
-        to: Joi.string().min(4).required()
-    }
+
+    let schema={
+        school: Joi.string().min(3).max(60).required(),
+        degree: Joi.string().min(5).max(60).required(),
+        major: Joi.string().min(3).max(60).required(),
+        startMonthYear: Joi.string().min(5).max(50),
+        gradMonthYear: Joi.string().min(5).max(50),
+        isEnrolled: Joi.boolean(),
+        city: Joi.string().min(5).max(60),
+        state: Joi.string().min(2).max(15)
+    };
 
     return Joi.validate(education, schema);
 }
 
 function validateCertification(certification){
 
-    schema={
-        title: Joi.string().min(5).max(60).required(),
-        organization: Joi.string().min(5).max(60).required(),
-        from: Joi.string().min(2).required(),
-        to: Joi.string().min(2).required(),
-        certificationID: Joi.string().min(5).max(50).required(),
+    let schema={
+        title: Joi.string().min(3).max(60).required(),
+        organization: Joi.string().min(3).max(60).required(),
+        issuedMonthYear: Joi.string().min(5).max(50).required(),
+        expMonthYear: Joi.string().min(5).max(50),
+        certificationID: Joi.string().min(5).max(50),
         links:Joi.string().allow('').optional().max(150),
-        description: Joi.string().min(20).max(150)
-    }
+        description: Joi.string().min(20).max(150).optional(),
+        canExpire: Joi.boolean().optional()
+    };
 
     return Joi.validate(certification, schema);
 }
 
 function validateHonorsAwards(award){
 
-    schema={
-        title: Joi.string().min(5).max(60).required(),
+    let schema={
+        title: Joi.string().min(3).max(60).required(),
         association: Joi.string().min(5).max(100).required(),
         issuer: Joi.string().min(3).max(60).required(),
-        from: Joi.string().min(2).required(),
+        issuedMonthYear: Joi.string().min(5).max(50).required(),
         links: Joi.string().allow('').optional().max(150),
         description: Joi.string().min(20).max(150)
      
-    }
+    };
 
     return Joi.validate(award, schema);
 }
@@ -289,24 +324,29 @@ const educationSchema=new mongoose.Schema({
     school: {type: String, required: true},
     degree: {type: String, required: true},
     major: {type: String, required: true},
-    to: {type: String, required: true},
-    from: {type: String, required: true},
-    currentlyAttending: {type: Boolean, required: false},
-    date: {type: Date, defualt: Date.now} 
+    startMonthYear: {type: String, required: false},
+    gradMonthYear: {type: String, required: false},
+    isEnrolled: {type: Boolean, required: false},
+    city: {type: String, required: false},
+    state: {type: String, required: false},
+    date: {type: Date, default: Date.now}
 
 });
+
+
 
 const experienceSchema=new mongoose.Schema({
 
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     title: {type: String, required: true},
     company: {type: String, required: true},
-    from: {type: String, required: true},
-    to: {type: String, required: true},
+    city: {type: String, required: false},
+    state: {type: String, required: false},
+    startDate: {type: String, required: true},
+    endDate: {type: String, required: false},
     description: {type: String, required: true},
-    currentlyWorking: {type: Boolean, required: false},
+    currentEmployer: {type: Boolean, required: false},
     date: {type: Date, defualt: Date.now} 
-
 
 });
 
@@ -315,25 +355,27 @@ const certificationSchema=new mongoose.Schema({
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     title: {type: String, required: true},
     organization: {type: String, required: true},
-    from: {type: String, required: true},
-    to: {type: String, required: true},
+    issuedMonthYear: {type: String, required: true},
+    expMonthYear: {type: String, required: false},
     certificationID: {type: String, required: true},
     links: {type: String, default:""},
     description: {type: String, required: true},
+    canExpire: {type: Boolean, required: false},
     date: {type: Date, defualt: Date.now} 
 
 });
 
 const honorsAwardSchema=new mongoose.Schema({
 
-    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User'},
     title: {type: String, required: true},
     association: {type: String, required: true},
     issuer: {type: String, required: true},
-    from: {type: String, required: true},
+    issuedMonthYear: {type: String, required: true},
     links: {type: String, default:""},
     description: {type: String, required: true},
     date: {type: Date,  defualt: Date.now} 
+    
 
 });
 
@@ -342,7 +384,7 @@ const Experience=mongoose.model("Experience", experienceSchema);
 const Certification=mongoose.model("Certification", certificationSchema);
 const HonorAward=mongoose.model("Honor Awards", honorsAwardSchema);
 
-
+exports.validatePassword=validatePassword;
 exports.validateUser= validateUser;
 exports.validateBrand= validateBrand;
 exports.validateDreamJob=validateDreamJob;

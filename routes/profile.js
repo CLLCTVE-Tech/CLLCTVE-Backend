@@ -1,6 +1,8 @@
 var express = require('express'),
     auth= require('../middleware/auth'),
-	stream_node = require('getstream-node'),
+    brand=require('../middleware/brand'),
+    stream_node = require('getstream-node'),
+    request=require('superagent'),
     router = express.Router();
 	
     var FeedManager = stream_node.FeedManager;
@@ -9,32 +11,81 @@ var express = require('express'),
     const logger=require('../config/logger');
     const joiToForms = require('joi-errors-for-forms').form;
     const convertToForms = joiToForms();
+    const {Portfolio, validateTitle} = require('../models/portfolio');
+    const {Skill,validateSkill}=require('../models/skill');
+    const validateFields= require('../lib/helpers').validateFields;
+    const validateSkillFields= require('../lib/helpers').validateSkillFields;
+    const _ = require('lodash')
 
-    var enrichActivities = function(body) {
+    var enrichActivities =  async function(body) {
         var activities = body.results;
-        return StreamBackend.enrichActivities(activities);
+        var results=[];
+        let activityFeed= await StreamBackend.enrichActivities(activities);
+       
+        if (activityFeed.length >0){
+
+            activityFeed.forEach(async (_activity, index) => {
+
+                results.push({
+                    actor: _activity.actor._id,
+                    foreign_id : _activity.foreign_id,
+                    id: _activity.id,
+                    object:{
+                        likes: _activity.object.likes,
+                        comments: _activity.object.comments,
+                        _id: _activity.object._id,
+                        user:_activity.object.user._id,
+                        tweet: _activity.object.tweet,
+                        date: _activity.object.date 
+                            },
+                    origin: _activity.origin,
+                    target: _activity.target,
+                    time: _activity.time,
+                    verb: _activity.verb
+                });
+            });
+
+        }; 
+
+        return results;
+        
+        
+        
     };
 
-    const {imageUpload}= require('../cloud/config/imageUpload');
-    const {User, Education, Experience, Certification, HonorAward,
-        validateSkill, validateExperience, validateEducation,
+    const {BaseUser, User, Brand, Education, Experience, Certification, HonorAward,
+         validateExperience, validateEducation,
     validateHonorsAwards, validateCertification}= require('../models/user');
-    
-        const Joi = require('joi');
+    const uploadFunction= require('../middleware/upload').sendUploadsToGCS;
+    const uploadMiddleware= require('../middleware/upload').uploadFilesMiddleware
+    const setType= require('../middleware/type');
+
+
+
+    const Joi = require('joi');
+    const multer=require('multer');
+
+    const multerMid = multer({
+        storage: multer.memoryStorage(),
+        limits: {
+          // no larger than 5mb.
+          fileSize: 5 * 1024 * 1024,
+        },
+      })
+      
     
 
     /******************
       User Profile
     ******************/
     
-   router.get('/', auth, async function(req, res, next) {
+   router.get('/user', auth, async function(req, res, next) {
 
     try{
     //we want to get the user but also exculde their password.
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
         
-
-    var userFeed = FeedManager.getUserFeed(req.user.id);
+    /*var userFeed = FeedManager.getUserFeed(req.user.id);
     console.log(userFeed);
 
     userFeed
@@ -47,6 +98,62 @@ var express = require('express'),
                 user: current_user,
                 profile_user: req.user,
                 activities: enrichedActivities,
+                path: req.url,
+                show_feed: true
+            });
+        })
+        .catch(next);   */
+
+        portfolio= await Portfolio.find({user:req.user.id});
+        skills= await Skill.find({user:req.user.id});
+        education=await Education.find({user:req.user.id});
+        experiences= await Experience.find({user:req.user.id});
+        honorAwards= await  HonorAward.find({user:req.user.id});
+        certifications= await Certification.find({user:req.user.id});
+
+        current_user.portfolio=portfolio;
+        current_user.skills=skills;
+        current_user.education=education;
+        current_user.experience=experiences;
+        current_user.honorAwards=honorAwards;
+        current_user.certifications=certifications;
+
+        await current_user.save();
+        res.status(200).send(current_user);
+    }
+    
+    catch(error){
+
+        console.error(error);
+        logger.error({message:"An error occurred ", error:error})
+        return res.status(500).send("Sorry an error occured please try again later.");
+
+}
+});
+
+router.get('/brand', [auth, brand] , async function(req, res, next) {
+
+    try{
+    //we want to get the user but also exculde their password.
+    const current_user=await Brand.findOne({_id:req.user.id}).select("-password");
+
+    const response = await request.get('http://localhost:3000/api/insights/default/feed')
+    .set('x-auth-token', req.header('x-auth-token'))
+
+    console.log(response);
+        
+    var userFeed = FeedManager.getUserFeed(req.user.id);
+
+    userFeed
+        .get({})
+        .then(enrichActivities)
+        .then(function(enrichedActivities) {
+            console.log(enrichedActivities);
+            res.status(200).send({
+                user: current_user,
+                profile_user: req.user,
+                activities: enrichedActivities,
+                insights: response.body.insights,
                 path: req.url,
                 show_feed: true
             });
@@ -130,18 +237,21 @@ router.put('/edit/basic', auth, async(req,res)=>{
 });
 
 
-router.put('/edit/profile/picture', auth, async(req,res)=>{
+router.put('/edit/profile/picture', [auth, setType('profile'), uploadMiddleware, uploadFunction], async(req,res)=>{
 
     try{
 
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        console.log(req.type)
+        console.log(req.fileURLs)
+
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        image_url= await imageUpload(req.file, 'profile', req.user.id);
-        current_user.profilePic= image_url;
+        current_user.profilePic=req.fileURLs;
         await current_user.save();
 
-        return res.status(200).send(current_user);
+        return res.status(200).send("Done");
+        
 } 
 catch(error){
 
@@ -152,172 +262,158 @@ catch(error){
 }
 });
 
-router.put('/edit/background/picture', auth, async(req,res)=>{
+router.put('/edit/background/picture', [auth, setType('background'), uploadMiddleware, uploadFunction], async(req,res)=>{
 
     try{
 
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        if (!current_user) return res.status(404).send("The User does not exist");
+        console.log(req.type)
+        console.log(req.fileURLs)
 
-        image_url= await imageUpload(req.file, 'profile', req.user.id);
-        current_user.backgroundPic = image_url;
-        await current_user.save();
-
-        return res.status(200).send(current_user);
-} 
-catch(error){
-
-    console.error(error);
-    logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
-
-}
-});
-
-router.put('/edit/skills', auth, async(req,res)=>{
-
-    try{
-
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        if (!current_user) return res.status(404).send("The user does not exist.");
-
-        return res.status(200).send(current_user);
-} 
-catch(error){
-
-    console.error(error);
-    logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
-
-}
-});
-
-router.post('/edit/skills', auth, async(req,res)=>{
-
-    try{
-
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        skills=req.body.skills
-        if (!Array.isArray(skills)) return res.status("401").send("Skills must be in array format");
-
-        for(i=0; i < skills.length; i++){
-            let {error} =validateSkill(skills[i]);
-            if (error) {
-                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
-                return res.status(422).json({
-                  status: 422,
-                  message: convertToForms(error)
-                });
-              }
-
-            //check if skill is in users list of skills before adding
-            let found = current_user.skills.find(element => element == skills[i]);
-
-            if (!found) current_user.skills.push(skills[i])
-        }
-
+        current_user.backgroundPic=req.fileURLs;
         await current_user.save();
 
-
-        return res.status(200).send(
-            {message: "Successfully added skills",
-        skills:current_user.skills});
+        return res.status(200).send("Done");
+        
 } 
 catch(error){
 
     console.error(error);
     logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
+    return res.status(500).send("Sorry an error occured please try again later.");
 
 }
 });
 
-router.put('/edit/skills', auth, async(req,res)=>{
+router.post('/edit/portfolio', [auth, setType('portfolio'), uploadMiddleware, uploadFunction], async(req,res)=>{
 
     try{
 
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        //check if the user exists first
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        skills=req.body.skills
-        if (!Array.isArray(skills)) return res.status("401").send("Skills must be in array format");
+        const URLs= req.fileURLs;
 
-        for(i=0; i < skills.length; i++){
-            let {error} =validateSkill(skills[i]);
-            if (error) {
-                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
-                return res.status(422).json({
-                  status: 422,
-                  message: convertToForms(error)
-                });
-              }
+        URLs.forEach(async (_objectURL,idx)=>{
 
-            //check if skill is in users list of skills before adding
-            let found = current_user.skills.find(element => element == skills[i]);
+            var portfolioObject= new Portfolio({
+                user: req.user.id,
+                mediaURL: _objectURL
+            })
 
-            if (!found) current_user.skills.push(skills[i])
-        }
+            await portfolioObject.save();
+            console.log(portfolioObject);
 
-        await current_user.save();
+        })
 
-
-        return res.status(200).send(
-            {message: "Successfully updated skills",
-        skills:current_user.skills});
+        return res.status(200).send("Uploaded Changes to User Portfolio");
+        
 } 
 catch(error){
 
     console.error(error);
     logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
+    return res.status(500).send("Sorry an error occured please try again later.");
 
 }
 });
 
-router.delete('/edit/skills', auth, async(req,res)=>{
+router.delete('/edit/portfolio/:id', [auth], async(req,res)=>{
 
     try{
 
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        //check if the user exists first
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        skills=req.body.skills
-        if (!Array.isArray(skills)) return res.status("401").send("Skills must be in array format");
+        const portfolioObject = Portfolio.findOne({user: req.user.id, _id: req.params.id});
+        if (!portfolioObject) return res.status(404).send("The object you are trying to delete does not exist");
 
-        for(i=0; i < skills.length; i++){
-            let {error} =validateSkill(skills[i]);
-            if (error) {
-                console.log('validateSkill, convertToForms(error): ', convertToForms(error));
-                return res.status(422).json({
-                  status: 422,
-                  message: convertToForms(error)
-                });
-              }
+        //if it exists, delete the object
+        await portfolioObject.deleteOne();
 
-            //check if skill is in users list of skills in order to delete
-            let found = current_user.skills.find(element => element == skills[i]);
-
-            if (!found) current_user.skills.splice(i,1)
-        }
-
-        await current_user.save();
-
-
-        return res.status(200).send(
-            {message: "Successfully added skills",
-        skills:current_user.skills});
-
+        return res.status(200).send("Uploaded Changes to User Portfolio");
+        
 } 
 catch(error){
 
     console.error(error);
     logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
+    return res.status(500).send("Sorry an error occured please try again later.");
 
 }
 });
+
+router.post('/edit/skills', [auth], async(req,res)=>{
+
+    try{
+
+        //check if the user exists first
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
+        if (!current_user) return res.status(404).send("The user does not exist");
+
+
+        let errors={};
+        //verify data entered
+        let _skillsErrorsArray= validateSkillFields('skills', skills, validateSkill);
+        if (!_.isEmpty(_skillsErrorsArray)) {
+        errors[`skills`] = _skillsErrorsArray;
+            }
+
+        if (!_.isEmpty(errors)) {
+            return res.status(422).json({
+            status: 422,
+            message: errors
+            });
+        }
+
+        //if there is no error we add the skill
+        const skill = new Skill({user: req.user.id, skill: req.body.skill})
+        await skill.save();
+    
+
+        return res.status(200).send("Successfully added new skill");
+        
+} 
+
+catch(error){
+
+    console.error(error);
+    logger.error({message:"An error occurred ", error:error})
+    return res.status(500).send("Sorry an error occured please try again later.");
+
+}
+});
+
+router.delete('/edit/skill/:id', [auth], async(req,res)=>{
+
+    try{
+
+        //check if the user exists first
+        const current_user=await BaseUser.findOne({_id:req.user.id}).select("-password");
+        if (!current_user) return res.status(404).send("The user does not exist");
+
+        const skill = Skill.findOne({user: req.user.id, _id: req.params.id});
+        if (!skill) return res.status(404).send("The skill you are trying to delete does not exist");
+
+        //if it exists, delete the object
+        await skill.deleteOne();
+
+        return res.status(200).send("Successfully deleted skill");
+        
+} 
+catch(error){
+
+    console.error(error);
+    logger.error({message:"An error occurred ", error:error})
+    return res.status(500).send("Sorry an error occured please try again later.");
+
+}
+});
+
 
 router.post('/edit/education', auth, async(req,res)=>{
 
@@ -326,32 +422,28 @@ router.post('/edit/education', auth, async(req,res)=>{
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        var educationData={
-            school: req.body.school,
-            degree: req.body.degree,
-            major: req.body.major,
-            from: req.body.from,
-            to: req.body.to
-        };
+        let errors = {};
+        let _eduErrorsArray = validateFields('education', req.body.education, validateEducation);
+        
+        if (!_.isEmpty(_eduErrorsArray)) {
+            errors[`education`] = _eduErrorsArray;
+        }
 
-        //check for errors
-        let {error}= validateEducation(educationData);
-        if (error) {
-            console.log('validateEducation, convertToForms(error): ', convertToForms(error));
+        if (!_.isEmpty(errors)) {
             return res.status(422).json({
-              status: 422,
-              message: convertToForms(error)
+            status: 422,
+            message: errors
             });
-          }
+        }
+        //return res.status(200).send("Works");
+
 
         //if there arrent any errors create new education object
+        var educationData= req.body.education[0]
         educationData["user"]=req.user.id;
         const education= new Education(educationData);
     
-        current_user.education.push(education);
         await education.save();
-        await current_user.save();
-            
     
         return res.status(200).send(
             {message:"Successfully added education",
@@ -366,33 +458,21 @@ router.post('/edit/education', auth, async(req,res)=>{
     }
     });
     
-    router.put('/edit/education', auth, async(req,res)=>{
+    
+router.delete('/edit/education/:id', auth, async(req,res)=>{
     
     try{
+        const current_user=await User.findOne({_id:req.user.id}).select("-password");
+        if (!current_user) return res.status(404).send("The user does not exist");
+
+        const education = Education.findOne({user: req.user.id, _id: req.params.id});
+        if (!education) return res.status(404).send("The object you are trying to delete does not exist");
+
+        //if it exists, delete the object
+        await education.deleteOne();
+
+        return res.status(200).send("Successfully deleted Education item");
     
-            const current_user=await User.findOne({_id:req.user.id}).select("-password");
-            if (!current_user) return res.status(404).send("The user does not exist");
-    
-            return res.status(200).send(current_user);
-    } 
-    catch(error){
-    
-        console.error(error);
-        logger.error({message:"An error occurred ", error:error})
-        return res.status(500).send("Sorry an error occured please try again later.");  
-    
-    }
-    });
-    
-    
-    router.delete('/edit/education', auth, async(req,res)=>{
-    
-    try{
-    
-            const current_user=await User.findOne({_id:req.user.id}).select("-password");
-            if (!current_user) return res.status(404).send("The user does not exist");
-    
-            return res.status(200).send(current_user);
     } 
     catch(error){
     
@@ -403,39 +483,33 @@ router.post('/edit/education', auth, async(req,res)=>{
     }
     });
 
-router.post('/edit/experience', auth, async(req,res)=>{
+router.post('/edit/experience', [auth], async(req,res)=>{
 
 try{
 
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        var experienceData={
-            title: req.body.title,
-            company: req.body.company,
-            from: req.body.from,
-            to: req.body.to,
-            description: req.body.description
-        };
-        //check for errors
+        let errors = {};
+        let _expErrorsArray = validateFields('experience', req.body.experience, validateExperience);
+        
+        if (!_.isEmpty(_expErrorsArray)) {
+            errors[`experience`] = _expErrorsArray;
+        }
 
-        let {error}= validateExperience(experienceData);
-        if (error) {
-            console.log('validateExperience, convertToForms(error): ', convertToForms(error));
+        if (!_.isEmpty(errors)) {
             return res.status(422).json({
-              status: 422,
-              message: convertToForms(error)
+            status: 422,
+            message: errors
             });
-          }
+        }
 
         //if there arrent any errors create new education object
+        var experienceData= req.body.experience[0]
         experienceData["user"]=req.user.id;
         const experience= new Experience(experienceData);
     
-        current_user.experience.push(experience);
         await experience.save();
-        await current_user.save();
-            
     
         return res.status(200).send(
             {message:"Successfully added experience",
@@ -451,32 +525,21 @@ catch(error){
 }
 });
 
-router.put('/edit/experience', auth, async(req,res)=>{
 
-try{
-
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        if (!current_user) return res.status(404).send("The user does not exist");
-
-        return res.status(200).send(current_user);
-} 
-catch(error){
-
-    console.error(error);
-    logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
-
-}
-});
-
-
-router.delete('/edit/experience', auth, async(req,res)=>{
+router.delete('/edit/experience/:id', auth, async(req,res)=>{
 
 try{
 
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
     if (!current_user) return res.status(404).send("The user does not exist");
-    return res.status(200).send(current_user);
+
+    const experience = Experience.findOne({user: req.user.id, _id: req.params.id});
+    if (!experience) return res.status(404).send("The object you are trying to delete does not exist");
+
+    //if it exists, delete the object
+    await experience.deleteOne();
+
+    return res.status(200).send("Successfully deleted Experience item");
 } 
 catch(error){
 
@@ -495,33 +558,26 @@ try{
     const current_user=await User.findOne({_id:req.user.id}).select("-password");
     if (!current_user) return res.status(404).send("The user does not exist");
 
-    var honorAwardData={
-        title: req.body.title,
-        association: req.body.association,
-        issuer: req.body.issuer,
-        from: req.body.from,
-        links: req.body.links,
-        description: req.body.description
-    };
-
-    //check for errors
-    let {error}= validateHonorsAwards(honorAwardData);
-    if (error) {
-        console.log('validateHonorsAwards, convertToForms(error): ', convertToForms(error));
-        return res.status(422).json({
-          status: 422,
-          message: convertToForms(error)
-        });
-      }
-
-    //if there arrent any errors create new honors object
-    honorAwardData["user"]=req.user.id;
-    const honorAward= new HonorAward(honorAwardData);
-
-    current_user.honorsAwards.push(honorAward);
-    await honorAward.save();
-    await current_user.save();
+    let errors = {};
+        let _honorErrorsArray = validateFields('education', req.body.honorsAward, validateHonorsAwards);
         
+        if (!_.isEmpty(_honorErrorsArray)) {
+            errors[`honorAwards`] = _honorErrorsArray;
+        }
+
+        if (!_.isEmpty(errors)) {
+            return res.status(422).json({
+            status: 422,
+            message: errors
+            });
+        }
+
+        //if there arrent any errors create new education object
+        var honorAwardData= req.body.honorsAward[0]
+        honorAwardData["user"]=req.user.id;
+        const honorAward= new HonorAward(honorAwardData);
+    
+        await honorAward.save();
 
     return res.status(200).send(
         {message:"Successfully added Honor/Award",
@@ -537,32 +593,21 @@ catch(error){
 });
 
 
-router.put('/edit/honors/awards', auth, async(req,res)=>{
+router.delete('/edit/honors/awards/:id', auth, async(req,res)=>{
 
 try{
 
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        
-} 
-catch(error){
+        const honorAward = HonorAward.findOne({user: req.user.id, _id: req.params.id});
+        if (!honorAward) return res.status(404).send("The object you are trying to delete does not exist");
 
-    console.error(error);
-    logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
+        //if it exists, delete the object
+        await honorAward.deleteOne();
 
-}
-});
+        return res.status(200).send("Successfully deleted Honor Award item");
 
-router.delete('/edit/honors/awards', auth, async(req,res)=>{
-
-try{
-
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        if (!current_user) return res.status(404).send("The user does not exist");
-
-        return res.status(200).send(current_user);
 } 
 catch(error){
 
@@ -580,33 +625,27 @@ router.post('/edit/certifications', auth, async(req,res)=>{
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        var certificationData={
-          title: req.body.title,
-          organization: req.body.organization,
-          from: req.body.from,
-          to: req.body.to,
-          certificationID: req.body.certificationID,
-          links: req.body.links,
-          description: req.body.description
+        let errors = {};
+        let _certErrorsArray = validateFields('education', req.body.certification, validateCertification);
+        
+        if (!_.isEmpty(_certErrorsArray)) {
+            errors[`certification`] = _certErrorsArray;
         }
-    
-        //check for errors
-        let {error}= validateCertification(certificationData);
-        if (error) {
-            console.log('validateCertification, convertToForms(error): ', convertToForms(error));
+
+        if (!_.isEmpty(errors)) {
             return res.status(422).json({
-              status: 422,
-              message: convertToForms(error)
+            status: 422,
+            message: errors
             });
-          }
-    
-        //if there arrent any errors create new honors object
+        }
+
+        //if there arrent any errors create new education object
+        var certificationData= req.body.certification[0]
         certificationData["user"]=req.user.id;
         const certification= new Certification(certificationData);
     
-        current_user.certifications.push(certification);
         await certification.save();
-        await current_user.save();
+            
     
         return res.status(200).send(
             {message:"Successfully added Certification",
@@ -621,32 +660,23 @@ catch(error){
 }
 });
 
-router.put('/edit/certifications', auth, async(req,res)=>{
+
+
+router.delete('/edit/certifications/:id', auth, async(req,res)=>{
 
     try{
 
         const current_user=await User.findOne({_id:req.user.id}).select("-password");
         if (!current_user) return res.status(404).send("The user does not exist");
 
-        return res.status(200).send(current_user);
-} 
-catch(error){
+        const certification = Certification.findOne({user: req.user.id, _id: req.params.id});
+        if (!certification) return res.status(404).send("The object you are trying to delete does not exist");
 
-    console.error(error);
-    logger.error({message:"An error occurred ", error:error})
-    return res.status(500).send("Sorry an error occured please try again later.");  
+        //if it exists, delete the object
+        await certification.deleteOne();
 
-}
-});
+        return res.status(200).send("Successfully deleted Certification item");
 
-router.delete('/edit/certifications', auth, async(req,res)=>{
-
-    try{
-
-        const current_user=await User.findOne({_id:req.user.id}).select("-password");
-        if (!current_user) return res.status(404).send("The user does not exist");
-
-        return res.status(200).send(current_user);
 } 
 catch(error){
 
